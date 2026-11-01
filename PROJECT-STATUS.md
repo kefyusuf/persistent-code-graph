@@ -48,4 +48,4 @@
 - Historical store module re-exports the same symbols; refresh/query consumers import canonical storage.
 - RED: six tests initially failed because the canonical module did not exist; GREEN: 6/6 passed. The full local offline gate passed **134/134**.
 - Snapshot schema, content-addressed objects, checkout-specific heads, writer locks, parser identities, and public API were not changed.
-- The **full 134 offline + 16 real-grammar** CI acceptance on PR #4 is pending verification; no merge has been performed.
+- **Full CI acceptance PASS: 150/150**, including 134 offline and 16 real-grammar/integration tests on [GitHub Actions run #41355996826](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41355996826). Both pinned lockfiles verified. PR #4 remains draft; no merge has been performed.
