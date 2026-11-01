@@ -1,0 +1,50 @@
+name: Parser Acceptance Gate (M1.3 / M1.5)
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  parser-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify PHP for legacy regression tests
+        run: php --version
+      - name: Install pinned parser packages (bootstrap lockfile if missing)
+        shell: bash
+        run: |
+          if [ -f spikes/m1.3/package-lock.json ]; then
+            npm ci --ignore-scripts --no-audit --no-fund --prefix spikes/m1.3
+          else
+            echo "::warning::Parser lockfile missing. Generating bootstrap lockfile; commit it before declaring a reproducible release gate."
+            npm install --ignore-scripts --no-audit --no-fund --prefix spikes/m1.3
+          fi
+      - name: Run all offline and REAL parser tests (fail closed)
+        run: node tools/verify-gates.mjs --mode full --output reports/m1.5.2/ci-verification.json
+      - name: Require committed parser lockfile for reproducible acceptance
+        if: always()
+        shell: bash
+        run: |
+          if ! git ls-files --error-unmatch spikes/m1.3/package-lock.json >/dev/null 2>&1; then
+            echo "::error::Parser lockfile must be committed before CI can be accepted as reproducible. Download bootstrap artifact and commit its package-lock.json."
+            exit 1
+          fi
+      - name: Upload test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parser-acceptance-evidence
+          path: |
+            reports/m1.5.2/
+            spikes/m1.3/package-lock.json
+          if-no-files-found: warn

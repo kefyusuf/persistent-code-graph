@@ -1,0 +1,9 @@
+{
+  "name": "persistent-code-graph-m1-4-store-spike",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Dependency-free snapshot persistence contract spike; parser and Git integration excluded",
+  "engines": {"node": ">=22"},
+  "scripts": {"test": "node --test tests/store.test.mjs"}
+}

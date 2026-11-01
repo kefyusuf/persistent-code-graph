@@ -1,0 +1,9 @@
+{
+  "name": "persistent-code-graph-m1-4-1-inventory-spike",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Parser-neutral Git worktree content verification and incremental file-fact reuse; no automatic hooks, MCP, LLM or real grammar gate",
+  "engines": {"node": ">=22"},
+  "scripts": {"test": "node --test tests/*.test.mjs"}
+}

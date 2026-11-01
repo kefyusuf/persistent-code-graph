@@ -1,22 +1,44 @@
-# Persistent Code Graph
+# Persistent Code Graph (Experimental)
 
-An offline-first, provider-independent code intelligence experiment.
+A deliberately small, offline-first code indexing project. **Not production-ready.** The goal is to index a repository once, reuse unchanged file facts, and refuse stale answers. The universal language adapter and future semantic code graph remain design targets rather than completed functionality.
 
-**Goal:** Index a code repository once; reuse unchanged structural facts; update only what changed; serve bounded, verified context to coding agents.
+## Current status
 
-## Status
+- M0–M1.1: documented product, architecture, and symbol/fact contracts.
+- M1.2: temporary PHP tokenizer / TypeScript parser feasibility exercise; not the production parser.
+- M1.3: real Tree-sitter grammar gate **OPEN**.
+- M1.4–M1.5.1: tested experimental store, file inventory, refresh and bounded read-only queries; not a complete semantic cross-file graph.
+- M1.5.2: single command and CI workflow for fail-closed acceptance evidence. No new runtime feature.
 
-- M0–M1.2: product constraints and preliminary parser design.
-- M1.3: real Tree-sitter PHP / TypeScript / TSX compatibility gate **OPEN**.
-- M1.4–M1.5.2: independent prototypes and 121 passing offline tests **in the local project package**, not yet accepted as a production system.
-- Real parser tests must pass in CI before accepting the integration.
+## Prerequisites
 
-## Boundaries
+Node.js 22+, Git and PHP CLI (for legacy temporary-parser tests). All offline contracts use Node.js built-in tests. Actual grammar tests require the pinned `web-tree-sitter@0.27.1` and `tree-sitter-wasm@2.0.4` dependencies.
 
-No LLM indexing, cloud, vector database, RAG, agent memory, dashboard, or background daemon. Do not silently serve a stale index.
+```sh
+# Does not install network dependencies. This is NOT parser acceptance.
+node tools/verify-gates.mjs --mode offline
 
-The initial `main` branch is intentionally minimal. Implementation and verification artifacts are staged on a dedicated development branch and merged only after review and evidence.
+# Bootstrap dependency lockfile once, with network access:
+npm install --ignore-scripts --no-audit --no-fund --prefix spikes/m1.3
+# IMPORTANT: version-control spikes/m1.3/package-lock.json
 
-## Engineering workflow
+# With a committed lockfile, use the repeatable install:
+npm ci --ignore-scripts --no-audit --no-fund --prefix spikes/m1.3
 
-Tests first (RED → GREEN → refactor), dedicated feature branch, pull request, CI verification, and no merge while required acceptance gates remain blocked.
+# All offline plus 12 real M1.3 and 3 real M1.5 grammar tests:
+node tools/verify-gates.mjs --mode full
+```
+
+The runner writes JSON and per-suite logs to `reports/m1.5.2/` (gitignored). `OFFLINE_ONLY` means parser acceptance has **not** happened; `BLOCKED` (exit code 2) means evidence is unavailable; `PASS` is possible only after all offline and actual grammar test suites run without skips or failures. A reproducible project baseline **also requires a committed `package-lock.json`**, enforced in GitHub Actions.
+
+## CI and repository handoff
+
+`.github/workflows/parser-acceptance.yml` runs on pushes and pull requests. If the lockfile is absent it bootstraps one on the runner and uploads it as an artifact, but intentionally fails the reproducibility condition. Commit the generated lockfile and rerun. The artifact also includes test logs and the JSON gate result even on failure.
+
+Do **not** interpret a green real grammar test on its own as production readiness: false relation edges, performance, Windows behavior, concurrency, and cross-language semantic correctness need their own acceptance gates.
+
+## Non-goals
+
+No hosted service, automatic background daemon, RAG, embeddings, remote memory, AI-generated summaries, dashboard, or MCP server in this milestone. Do not use test stubs as a production parser fallback.
+
+See [M1.5.2 decision record](docs/M1.5.2-ACCEPTANCE-RUNNER.md) and [project status](PROJECT-STATUS.md).

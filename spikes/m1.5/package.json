@@ -1,0 +1,12 @@
+{
+  "name": "persistent-code-graph-m1-5-integration-gate",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {
+    "test:offline": "node --test tests/pipeline.test.mjs",
+    "test:grammar": "node --test tests/real-grammar.test.mjs",
+    "test": "npm run test:offline && npm run test:grammar"
+  }
+}
