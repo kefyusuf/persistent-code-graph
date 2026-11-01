@@ -1,37 +1,51 @@
 # Persistent Code Graph — Project Status
 
-**As of 2026-11-01.** This local artifact has not been pushed to any remote repository.
+**As of 2026-11-02.** GitHub: https://github.com/kefyusuf/persistent-code-graph
 
 | Milestone | State | Evidence |
 |---|---|---|
 | M0 | Design recorded | Product definition and architecture constraints |
 | M1.0–M1.1 | Design recorded | Language adapter and normalized facts models |
 | M1.2 | Independent experiment accepted | Temporary parser tests: 11/11 |
-| M1.3 | **BLOCKED** | Offline contract: 13/13; real Tree-sitter grammar: 12 unexecuted |
+| M1.3 | **Parser compatibility gate PASSED** | Offline contracts 13/13; real Tree-sitter 12/12 in GitHub Actions |
 | M1.4 | Independent experiment accepted | Persistent snapshot store: 18/18 |
 | M1.4.1 | Independent experiment accepted | Git inventory and incremental reuse: 21/21 |
 | M1.4.2 | Independent experiment accepted | Verified bounded queries: 26/26 |
-| M1.5 | **PROVISIONAL / BLOCKED** | Offline pipeline: 12/12; actual grammar: 3 unexecuted |
+| M1.5 | **Parser integration gate PASSED** | Offline pipeline 12/12; real grammar integration 3/3 in GitHub Actions |
 | M1.5.1 | Independent experiment accepted | Verified batch query: 14/14 |
-| M1.5.2 | Acceptance runner offline passed | Runner tests: 6/6; all offline suites: **121/121** |
+| M1.5.2 | **CI acceptance PASS** | Gate runner 6/6; offline + grammar tests **136/136**; both lockfiles committed |
 
-**Full real parser gate:** BLOCKED (missing pinned npm packages); CI not yet run. Node.js 22/Linux environment.  
-**Repo handoff:** NOW RECOMMENDED. Create an empty repository so GitHub Actions can run the real grammar gate. Do not yet label the indexing engine production-ready.  
-**Out of scope:** MCP, cloud, LLM calls, embedding/RAG, multi-agent memory, dashboard, semantic resolution, and automatic background workers.
+**Acceptance evidence:** [GitHub Actions successful run #3](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41352082086), Node.js 22 / Ubuntu runner. CI passed with npm `ci` for both locked parsers. The current repository is an experimental baseline, not a production code intelligence service.
 
-## M1.6: first canonical API bridge (pending CI)
+**Git flow:** Draft [PR #1](https://github.com/kefyusuf/persistent-code-graph/pull/1) on `chore/m1.5.2-parser-acceptance-baseline`. **Do not merge automatically.** Review and follow-up design are required.
 
-- `src/core.mjs` now owns the original M1.5 orchestration; the old spike import is a re-export, avoiding a second implementation.
-- `src/index.mjs` exports only `openCodeGraph` and does not expose the temporary parser to consumers.
-- Root package declares one entry point. No hosted service, daemon, MCP, embeddings, or LLM functionality added.
-- New public API contract: 4 offline tests passed locally; legacy offline suite remains green (125 tests overall).
-- New real-grammar public API test requires CI execution before acceptance. Until then M1.6 stays provisional.
-- Parsed facts remain language-limited, syntax-only, and partially covered. Production packaging / independent installation / portability are not yet supported.
+**Still unverified:** Windows portability, high-load/concurrent index behavior, broad language semantics and correctness beyond fixtures, end-to-end agent token savings, and production hardening.
 
-## M1.6.2: canonical storage migration (draft, pending CI)
+**Out of scope:** MCP, cloud, LLM calls, embedding/RAG, multi-agent memory, dashboard, and automatic background workers.
 
-- Canonical `CodeGraphStore`, canonical JSON serialization, and manifest comparison moved unchanged to `src/storage/store.mjs`.
-- Historical storage module now re-exports only; refresh and query import the canonical owner.
-- RED: 6 new tests failed on the missing canonical module; GREEN: 6/6. Local gate: **134/134 offline**; this is **not** full acceptance.
-- Parser identity, immutable object hashes, snapshot version, lock behavior, working-tree freshness guarantees and public API are unchanged.
-- CI must pass **134 offline + 16 real grammar** tests on this PR's final commit. No merge performed.
+## M1.6 — Canonical API bridge (Draft PR #2)
+
+- [PR #2](https://github.com/kefyusuf/persistent-code-graph/pull/2) is stacked on the already CI-verified [PR #1](https://github.com/kefyusuf/persistent-code-graph/pull/1), not on `main`.
+- `src/core.mjs` now owns the existing orchestration; the M1.5 import re-exports it to preserve prior tests.
+- Public `src/index.mjs` exposes only the real Tree-sitter opener `openCodeGraph`.
+- Local offline verification: **125/125 passed**. The real parser entry-point test passed on [GitHub Actions run #41353335458](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41353335458).
+- No semantic cross-file edge resolution, MCP, background service, LLM, RAG or cloud layer was added.
+- The `spikes/` dependencies are intentionally transitional. Production packaging and Windows support remain unverified.
+
+## M1.6.1 — Canonical Parser Module Migration (Draft PR #3)
+
+- [PR #3](https://github.com/kefyusuf/persistent-code-graph/pull/3) is stacked on PR #2 and remains draft; `main` is unchanged.
+- Canonical parser ownership: `src/parser/{contract,runtime,provider}.mjs`, with re-export-only legacy paths.
+- The parser dependency installation and lockfiles stay under `spikes/m1.3` until a distinct packaging milestone.
+- Extractor source-code SHA-256 changes because ownership moved; previously stored facts must be re-parsed rather than reused with an incompatible identity.
+- **Full parser acceptance: PASS, 144/144 tests**, including 128 offline and 16 real grammar/integration tests on [GitHub Actions run #41355128869](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41355128869).
+- Not a production-ready cross-file semantic code graph. No MCP, memory, daemon, additional languages or automatic merge.
+
+## M1.6.2 — Canonical Storage Migration (Draft PR #4)
+
+- [PR #4](https://github.com/kefyusuf/persistent-code-graph/pull/4) is stacked on PR #3 and remains draft; `main` is unchanged.
+- Canonical `CodeGraphStore`, canonical JSON serialization and manifest comparison moved unchanged to `src/storage/store.mjs`.
+- Historical store module re-exports the same symbols; refresh/query consumers import canonical storage.
+- RED: six tests initially failed because the canonical module did not exist; GREEN: 6/6 passed. The full local offline gate passed **134/134**.
+- Snapshot schema, content-addressed objects, checkout-specific heads, writer locks, parser identities, and public API were not changed.
+- The **full 134 offline + 16 real-grammar** CI acceptance on PR #4 is pending verification; no merge has been performed.
