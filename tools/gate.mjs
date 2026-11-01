@@ -8,10 +8,12 @@ export const OFFLINE_GATES = Object.freeze([
   { id: 'm1.5-pipeline', dir: 'spikes/m1.5', pattern: 'tests/pipeline.test.mjs' },
   { id: 'm1.5.1-batch', dir: 'spikes/m1.5.1', pattern: 'tests/*.test.mjs' },
   { id: 'm1.5.2-gate-contract', dir: 'tools', pattern: 'tests/gate.test.mjs' },
+  { id: 'm1.6-core', dir: '.', pattern: 'test/core.test.mjs' },
 ]);
 export const REAL_GRAMMAR_GATES = Object.freeze([
   { id: 'm1.3-real-grammar', dir: 'spikes/m1.3', pattern: 'tests/grammar.test.mjs' },
   { id: 'm1.5-real-integration', dir: 'spikes/m1.5', pattern: 'tests/real-grammar.test.mjs' },
+  { id: 'm1.6-real-grammar', dir: '.', pattern: 'test/real-grammar.test.mjs' },
 ]);
 export function gatePlan(mode) {
   if (!['offline', 'full'].includes(mode)) throw new Error('INVALID_GATE_MODE');

@@ -1,0 +1,12 @@
+{
+  "name": "persistent-code-graph",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "exports": { ".": "./src/index.mjs" },
+  "scripts": {
+    "test:core": "node --test test/core.test.mjs",
+    "test:grammar": "node --test test/real-grammar.test.mjs"
+  }
+}
