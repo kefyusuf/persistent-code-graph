@@ -3,7 +3,7 @@
  * Not a semantic graph, not an auto-indexer, not an MCP server.
  * Whole-file source bytes are rehashed twice; no source code is returned.
  */
-import { CodeGraphStore } from '../../m1.4/src/store.mjs';
+import { CodeGraphStore } from '../../../src/storage/store.mjs';
 import { inventoryGitCheckout } from '../../m1.4.1/src/inventory.mjs';
 
 const err = (code, message) => Object.assign(new Error(`${code}: ${message}`), { code });

@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { OFFLINE_GATES, REAL_GRAMMAR_GATES, gatePlan, tapSummary, acceptanceStatus } from '../gate.mjs';
 const good=id=>({id,status:'passed',tests:1,pass:1,fail:0,skipped:0,cancelled:0});
 test('offline and real grammar gates are explicitly separate',()=>{
- assert.equal(OFFLINE_GATES.length,10);
+ assert.equal(OFFLINE_GATES.length,11);
  assert.ok(OFFLINE_GATES.some(g=>g.id==='m1.6.1-parser-bridge'));
  assert.equal(REAL_GRAMMAR_GATES.length,3);
- assert.equal(gatePlan('full').length,13);
- assert.equal(gatePlan('offline').length,10);
+ assert.equal(gatePlan('full').length,14);
+ assert.equal(gatePlan('offline').length,11);
  assert.throws(()=>gatePlan('garbage'),/INVALID_GATE_MODE/);
 });
 test('a clean offline result is never a real-parser acceptance',()=>{
