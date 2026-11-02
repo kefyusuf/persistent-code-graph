@@ -7,8 +7,8 @@
  */
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, open, readdir, rename, rm, stat } from 'node:fs/promises';
-import { realpathSync } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { realpathSync, lstatSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const HASH = /^[a-f0-9]{64}$/;
@@ -35,6 +35,33 @@ export function canonicalJSONString(value) {
  }
  return JSON.stringify(visit(value));
 }
+/** Resolve existing symlink ancestors even if the target directory does not yet exist.
+ * A lexical `resolve(indexRoot)` check alone can point outside the checkout while
+ * the filesystem actually routes writes into it through a symlink. */
+function prospectivePhysicalPath(target){
+ let candidate=resolve(target);
+ const missing=[];
+ while(true){
+  try {
+   const physical=realpathSync(candidate);
+   return resolve(physical,...missing.reverse());
+  }catch(e){
+   if(e.code!=='ENOENT')throw error('INVALID_STORE',`cannot resolve index root: ${e.code}`);
+   // A dangling symlink is not an ordinary missing component. Do not guess
+   // where an index would be written if a link target later appeared.
+   try{lstatSync(candidate);throw error('INVALID_STORE','unresolved symlink in index root');}
+   catch(statError){if(statError.code!=='ENOENT')throw statError;}
+   const parent=dirname(candidate);
+   if(parent===candidate)throw error('INVALID_STORE','cannot resolve index root');
+   missing.push(basename(candidate));candidate=parent;
+  }
+ }
+}
+function isAtOrWithin(parent,child){
+ const rel=relative(parent,child);
+ return rel==='' || (rel!=='..' && !rel.startsWith('..'+sep) && !isAbsolute(rel));
+}
+
 function validatePath(path) {
  if(typeof path!=='string'||path.length===0||path.includes('\\')||path.includes('\0')||isAbsolute(path)||/^[A-Za-z]:/.test(path))
    throw error('INVALID_PATH',String(path));
@@ -117,9 +144,9 @@ async function saveImmutable(directory,obj){
 export class CodeGraphStore {
  constructor({indexRoot,checkoutRoot,failPoint=null}){
   if(!indexRoot ||!checkoutRoot)throw error('INVALID_STORE','indexRoot and checkoutRoot required');
-  this.indexRoot=resolve(indexRoot);
   this.checkoutRoot=realpathSync(checkoutRoot);
-  if(this.checkoutRoot===this.indexRoot || (!relative(this.checkoutRoot,this.indexRoot).startsWith('..'+sep) && relative(this.checkoutRoot,this.indexRoot)!=='..' && !isAbsolute(relative(this.checkoutRoot,this.indexRoot))))
+  this.indexRoot=prospectivePhysicalPath(indexRoot);
+  if(isAtOrWithin(this.checkoutRoot,this.indexRoot))
    throw error('INVALID_STORE','index root must be outside source checkout for M1.4');
   this.checkoutKey=hash(this.checkoutRoot);
   this.headPath=join(this.indexRoot,'heads',`${this.checkoutKey}.json`);
