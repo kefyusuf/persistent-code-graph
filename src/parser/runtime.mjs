@@ -5,9 +5,8 @@ import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { detectLanguage, fileFactsFromTree, parserCacheIdentity } from './contract.mjs';
 
-// M1.6.1: dependency installation remains pinned in the M1.3 package.
-// Resolve packages from that package explicitly rather than from the current working directory.
-const parserPackage = new URL('../../spikes/m1.3/package.json', import.meta.url);
+// Runtime dependencies belong to the root package, not historical spike workspaces.
+const parserPackage = new URL('../../package.json', import.meta.url);
 const parserRequire = createRequire(parserPackage);
 const parserModule = async name => import(pathToFileURL(parserRequire.resolve(name)).href);
 
@@ -20,7 +19,7 @@ const sha = b=>createHash('sha256').update(b).digest('hex');
 const extractorSha256=sha(Buffer.concat([readFileSync(new URL('./contract.mjs',import.meta.url)),readFileSync(new URL('./runtime.mjs',import.meta.url))]));
 
 function verifyLocalPackage(name, expected){
-  const manifest = new URL(`../../spikes/m1.3/node_modules/${name}/package.json`,import.meta.url);
+  const manifest = new URL(`../../node_modules/${name}/package.json`,import.meta.url);
   let p;
   try{p=JSON.parse(readFileSync(manifest,'utf8'));}catch(e){throw new Error(`MISSING_LOCAL_DEPENDENCIES: ${name}@${expected} unavailable; install pinned packages before running grammar gate`,{cause:e});}
   if(p.version!==expected)throw new Error(`VERSION_MISMATCH: ${name} expected ${expected} got ${p.version}`);

@@ -14,6 +14,11 @@
     "test:grammar": "node --test test/real-grammar.test.mjs",
     "test:storage": "node --test test/storage-migration.test.mjs",
     "test:incremental": "node --test test/incremental-migration.test.mjs",
-    "test:query": "node --test test/query-migration.test.mjs"
+    "test:query": "node --test test/query-migration.test.mjs",
+    "test:independence": "node --test test/runtime-independence.test.mjs"
+  },
+  "dependencies": {
+    "web-tree-sitter": "0.27.1",
+    "tree-sitter-wasm": "2.0.4"
   }
 }

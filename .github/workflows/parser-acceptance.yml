@@ -22,23 +22,20 @@ jobs:
         run: php --version
       - name: Install pinned legacy TypeScript parser
         shell: bash
-        run: |
-          if [ -f spikes/m1.2/package-lock.json ]; then
-            npm ci --ignore-scripts --no-audit --no-fund --prefix spikes/m1.2
-          else
-            echo "::warning::M1.2 lockfile missing; bootstrapping for the next commit."
-            npm install --ignore-scripts --no-audit --no-fund --prefix spikes/m1.2
-          fi
-      - name: Install pinned real grammar dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix spikes/m1.2
+      - name: Install pinned historical grammar dependencies
         shell: bash
         run: npm ci --ignore-scripts --no-audit --no-fund --prefix spikes/m1.3
+      - name: Install pinned standalone core dependencies
+        shell: bash
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run offline and real parser gates
         run: node tools/verify-gates.mjs --mode full --output reports/m1.5.2/ci-verification.json
-      - name: Require both committed lockfiles
+      - name: Require all committed lockfiles
         if: always()
         shell: bash
         run: |
-          for file in spikes/m1.2/package-lock.json spikes/m1.3/package-lock.json; do
+          for file in package-lock.json spikes/m1.2/package-lock.json spikes/m1.3/package-lock.json; do
             if ! git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
               echo "::error::$file must be committed for reproducible CI."
               exit 1
@@ -51,6 +48,7 @@ jobs:
           name: parser-acceptance-evidence
           path: |
             reports/m1.5.2/
+            package-lock.json
             spikes/m1.2/package-lock.json
             spikes/m1.3/package-lock.json
           if-no-files-found: warn
