@@ -38,11 +38,11 @@ test('old store entrypoint is a re-export-only shim, with no second storage owne
 });
 
 test('canonical refresh and query use canonical storage directly; no old storage module imports',()=>{
-  for (const name of ['src/incremental/refresh.mjs','spikes/m1.4.2/src/query.mjs']){
+  for (const name of ['src/incremental/refresh.mjs','src/query/query.mjs']){
     const code=readFileSync(new URL(`../${name}`,import.meta.url),'utf8');
     assert.match(code,name.startsWith('src/')
       ? /from '\.\.\/storage\/store\.mjs'/
-      : /from '\.\.\/\.\.\/\.\.\/src\/storage\/store\.mjs'/);
+      : /from '\.\.\/storage\/store\.mjs'/);
     assert.doesNotMatch(code,/from '\.\.\/\.\.\/m1\.4\/src\/store\.mjs'/);
   }
 });

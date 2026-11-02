@@ -13,6 +13,7 @@
     "test:core": "node --test test/core.test.mjs",
     "test:grammar": "node --test test/real-grammar.test.mjs",
     "test:storage": "node --test test/storage-migration.test.mjs",
-    "test:incremental": "node --test test/incremental-migration.test.mjs"
+    "test:incremental": "node --test test/incremental-migration.test.mjs",
+    "test:query": "node --test test/query-migration.test.mjs"
   }
 }
