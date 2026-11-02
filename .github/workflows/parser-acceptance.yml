@@ -1,0 +1,56 @@
+name: Parser Acceptance Gate (M1.3 / M1.5)
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  parser-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify PHP for legacy regression tests
+        run: php --version
+      - name: Install pinned legacy TypeScript parser
+        shell: bash
+        run: |
+          if [ -f spikes/m1.2/package-lock.json ]; then
+            npm ci --ignore-scripts --no-audit --no-fund --prefix spikes/m1.2
+          else
+            echo "::warning::M1.2 lockfile missing; bootstrapping for the next commit."
+            npm install --ignore-scripts --no-audit --no-fund --prefix spikes/m1.2
+          fi
+      - name: Install pinned real grammar dependencies
+        shell: bash
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix spikes/m1.3
+      - name: Run offline and real parser gates
+        run: node tools/verify-gates.mjs --mode full --output reports/m1.5.2/ci-verification.json
+      - name: Require both committed lockfiles
+        if: always()
+        shell: bash
+        run: |
+          for file in spikes/m1.2/package-lock.json spikes/m1.3/package-lock.json; do
+            if ! git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
+              echo "::error::$file must be committed for reproducible CI."
+              exit 1
+            fi
+          done
+      - name: Upload test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parser-acceptance-evidence
+          path: |
+            reports/m1.5.2/
+            spikes/m1.2/package-lock.json
+            spikes/m1.3/package-lock.json
+          if-no-files-found: warn

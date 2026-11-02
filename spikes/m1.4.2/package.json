@@ -1,0 +1,14 @@
+{
+  "name": "persistent-code-graph-m1-4-2-verified-read-spike",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Parser-neutral point-in-time verified, bounded read-only symbol query gate",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "demo": "node src/demo.mjs"
+  }
+}
