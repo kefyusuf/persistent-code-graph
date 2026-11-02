@@ -7,7 +7,7 @@ export const OFFLINE_GATES = Object.freeze([
   { id: 'm1.4.2-query', dir: 'spikes/m1.4.2', pattern: 'tests/*.test.mjs' },
   { id: 'm1.5-pipeline', dir: 'spikes/m1.5', pattern: 'tests/pipeline.test.mjs' },
   { id: 'm1.5.1-batch', dir: 'spikes/m1.5.1', pattern: 'tests/*.test.mjs' },
-  { id: 'm1.5.2-gate-contract', dir: 'tools', pattern: 'tests/gate.test.mjs' },
+  { id: 'm1.5.2-gate-contract', dir: 'tools', pattern: 'tests/*.test.mjs' },
   { id: 'm1.6-core', dir: '.', pattern: 'test/core.test.mjs' },
   { id: 'm1.6.1-parser-bridge', dir: '.', pattern: 'test/parser-migration.test.mjs' },
   { id: 'm1.6.2-storage-bridge', dir: '.', pattern: 'test/storage-migration.test.mjs' },
