@@ -18,14 +18,12 @@ Node.js 22+, Git and PHP CLI (for legacy temporary-parser tests). All offline co
 # Does not install network dependencies. This is NOT parser acceptance.
 node tools/verify-gates.mjs --mode offline
 
-# Bootstrap dependency lockfile once, with network access:
-npm install --ignore-scripts --no-audit --no-fund --prefix spikes/m1.3
-# IMPORTANT: version-control spikes/m1.3/package-lock.json
-
-# With a committed lockfile, use the repeatable install:
+# Locked dependencies for canonical runtime and historical grammar tests:
+npm ci --ignore-scripts --no-audit --no-fund
 npm ci --ignore-scripts --no-audit --no-fund --prefix spikes/m1.3
+npm ci --ignore-scripts --no-audit --no-fund --prefix spikes/m1.2
 
-# All offline plus 12 real M1.3 and 3 real M1.5 grammar tests:
+# Full acceptance, including a standalone src/ package with no spikes tree:
 node tools/verify-gates.mjs --mode full
 ```
 
@@ -33,7 +31,7 @@ The runner writes JSON and per-suite logs to `reports/m1.5.2/` (gitignored). `OF
 
 ## CI and repository handoff
 
-`.github/workflows/parser-acceptance.yml` runs on pushes and pull requests. If the lockfile is absent it bootstraps one on the runner and uploads it as an artifact, but intentionally fails the reproducibility condition. Commit the generated lockfile and rerun. The artifact also includes test logs and the JSON gate result even on failure.
+`.github/workflows/parser-acceptance.yml` runs on pushes and pull requests. CI installs the locked canonical parser dependencies at the repository root and separately installs locked dependencies needed by historical regression suites. All three lockfiles are required. The artifact also includes test logs and the JSON gate result even on failure.
 
 Do **not** interpret a green real grammar test on its own as production readiness: false relation edges, performance, Windows behavior, concurrency, and cross-language semantic correctness need their own acceptance gates.
 
@@ -55,7 +53,7 @@ const result = await graph.query('declarations', { name: 'MyClass' });
 // Inspect result.state before trusting its results.
 ```
 
-`npm run test:core` exercises the public API contract offline, without substituting an experimental parser into the public entry point. `npm run test:grammar` requires the pinned Tree-sitter packages installed in `spikes/m1.3/`. The full gate runner includes both suites. The codebase still stores **file-local syntax facts**, not a cross-file resolved semantic graph, and is not production-ready.
+`npm run test:core` exercises the public API contract offline, without substituting an experimental parser into the public entry point. `npm run test:grammar` requires pinned Tree-sitter packages installed at the project root. The full gate runner includes both suites. The codebase still stores **file-local syntax facts**, not a cross-file resolved semantic graph, and is not production-ready.
 
 ## M1.6.2 canonical storage (draft)
 
@@ -68,3 +66,9 @@ const result = await graph.query('declarations', { name: 'MyClass' });
 ## M1.6.4 canonical verified queries (draft)
 
 `src/query/query.mjs` owns the bounded single and batch read boundaries. The M1.4.2 and M1.5.1 paths are compatibility re-exports and `src/core.mjs` uses the canonical implementation. Freshness double-scans, parser identity checks, output budgets, snapshot format, and partial coverage are unchanged. The new migration suite is `npm run test:query`; full CI acceptance is required before the refactor can be merged. See `docs/M1.6.4-CANONICAL-VERIFIED-QUERY-MIGRATION.md`.
+
+## M1.6.5 standalone runtime dependency boundary (draft)
+
+The production entry point (`src/index.mjs`) and its transitive `src/` imports no longer use any `spikes/` files or package installation directories. Root `package.json` and `package-lock.json` own the pinned Tree-sitter runtime and grammar artifacts; the historical M1.3 lockfile stays for its independent fixture tests. Cache identities continue to hash the actual runtime/extractor source and grammar bytes.
+
+`npm run test:independence` checks the dependency manifest and isolated missing-assets behavior offline. Full acceptance also runs the same PHP/TypeScript parser workflow from a copied `src/` directory **without** `spikes/` using only its installed dependencies. See `docs/M1.6.5-STANDALONE-RUNTIME-BOUNDARY.md`.

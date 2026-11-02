@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -25,4 +25,31 @@ test('M1.6 public API indexes real PHP, TypeScript and TSX grammars and reopens 
   const q=await reopened.query('declarations',{name:'Badge'});
   assert.equal(q.state,'verified');
   assert.equal(q.results.length,1);
+});
+
+
+test('isolated core with root dependencies parses PHP/TypeScript without any spikes directory', async t => {
+  const temp = await mkdtemp(join(tmpdir(), 'pcg-m165-standalone-'));
+  t.after(()=>rm(temp,{recursive:true,force:true}));
+  await cp(new URL('../src/',import.meta.url),join(temp,'src'),{recursive:true});
+  await cp(new URL('../node_modules/',import.meta.url),join(temp,'node_modules'),{recursive:true});
+  await writeFile(join(temp,'package.json'),JSON.stringify({type:'module',dependencies:{'web-tree-sitter':'0.27.1','tree-sitter-wasm':'2.0.4'}},null,2));
+  const {existsSync}=await import('node:fs');
+  const {pathToFileURL}=await import('node:url');
+  assert.equal(existsSync(join(temp,'spikes')),false);
+  const {openCodeGraph:openIsolated}=await import(pathToFileURL(join(temp,'src/index.mjs')).href);
+  const checkoutRoot=join(temp,'checkout'),indexRoot=join(temp,'store');
+  await mkdir(checkoutRoot);
+  execFileSync('git',['init','-q'],{cwd:checkoutRoot});
+  await writeFile(join(checkoutRoot,'catalog.php'),'<?php class Product { public function load() {} }');
+  await writeFile(join(checkoutRoot,'catalog.ts'),'interface Product { name: string }');
+  const app=await openIsolated({checkoutRoot,indexRoot});
+  const first=await app.refresh();
+  assert.equal(first.counts.parsed,2);
+  const result=await app.query('declarations',{name:'Product'});
+  assert.equal(result.state,'verified');
+  assert.equal(result.results.length,2);
+  const warm=await app.refresh();
+  assert.equal(warm.counts.parsed,0);
+  assert.equal(warm.counts.reused,2);
 });
