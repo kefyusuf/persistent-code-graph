@@ -13,13 +13,13 @@
 | M1.6.1 | Parser migration PR #3 | `src/parser/` ownership and shims |
 | M1.6.2 | Storage migration PR #4 | `src/storage/` ownership and shims |
 | M1.6.3 | Incremental migration PR #5 | `src/incremental/` ownership and shims; previous CI 156/156 |
-| M1.6.4 | **Pending CI / review** | `src/query/query.mjs`; seven new migration tests; local offline 147/147 |
+| M1.6.4 | **CI accepted; Draft PR review pending** | `src/query/query.mjs`; 147 offline + 16 real parser tests passed (163 total) |
 
 ## M1.6.4 evidence and release gate
 
 - RED: module-resolution failure for the deliberately missing canonical query module. GREEN: seven newly added tests pass.
-- Local offline: **147/147** tests, all 13 suites passed. This is `OFFLINE_ONLY`, not proof of real-grammar acceptance.
-- Real parser gate: **16** tests in three real-grammar suites must run against this branch on GitHub Actions, not skipped. Do not claim **163/163** until the final commit's CI is verified.
+- Local offline: **147/147** tests, all 13 suites passed, `OFFLINE_ONLY`. GitHub Actions **41423090754** subsequently passed the full gate.
+- Real parser gate: **16/16** tests passed with zero skips and failures. [GitHub Actions run 41423090754](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41423090754) reported `PASS; 163 passed` for implementation commit `d39403bcb59073eee0f1be3ece7bea3a23d80b55`. Documentation-only updates require their own final-head CI check.
 - Query implementation moved unchanged. Old spike paths are re-export-only shims; no schema, cache identity or semantic graph changes.
 - The pull-request stack is deliberately left unmerged pending review and evidence.
 
