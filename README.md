@@ -71,4 +71,4 @@ const result = await graph.query('declarations', { name: 'MyClass' });
 
 The production entry point (`src/index.mjs`) and its transitive `src/` imports no longer use any `spikes/` files or package installation directories. Root `package.json` and `package-lock.json` own the pinned Tree-sitter runtime and grammar artifacts; the historical M1.3 lockfile stays for its independent fixture tests. Cache identities continue to hash the actual runtime/extractor source and grammar bytes.
 
-`npm run test:independence` checks the dependency manifest and isolated missing-assets behavior offline. Full acceptance also runs the same PHP/TypeScript parser workflow from a copied `src/` directory **without** `spikes/` using only its installed dependencies. See `docs/M1.6.5-STANDALONE-RUNTIME-BOUNDARY.md`.
+`npm run test:independence` checks the dependency manifest, isolated missing-assets behavior, and the CI installation sequence offline. Full acceptance also runs the same PHP/TypeScript parser workflow from a copied `src/` directory **without** `spikes/` using only its installed dependencies. See `docs/M1.6.5-STANDALONE-RUNTIME-BOUNDARY.md`.

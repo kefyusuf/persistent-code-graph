@@ -3,11 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { mkdtemp, cp, writeFile, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
-const project = resolve(new URL('..', import.meta.url).pathname);
 const rootPackage = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)));
 const lock = () => JSON.parse(readFileSync(new URL('../package-lock.json', import.meta.url)));
 
@@ -52,4 +51,14 @@ test('isolated package imports without the historical spikes tree and refuses mi
   execFileSync('git',['init','-q'],{cwd:checkoutRoot});
   await writeFile(join(checkoutRoot,'foo.ts'),'interface Foo {}');
   await assert.rejects(lib.openCodeGraph({checkoutRoot,indexRoot:join(dir,'index')}),/MISSING_LOCAL_DEPENDENCIES/);
+});
+
+test('CI installs root and historical pinned dependencies before the full acceptance gate', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/parser-acceptance.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /npm ci --ignore-scripts --no-audit --no-fund --prefix spikes\/m1\.2/);
+  assert.match(workflow, /npm ci --ignore-scripts --no-audit --no-fund --prefix spikes\/m1\.3/);
+  assert.match(workflow, /npm ci --ignore-scripts --no-audit --no-fund\s*\n/);
+  assert.match(workflow, /node tools\/verify-gates\.mjs --mode full/);
+  assert.match(workflow, /for file in package-lock\.json spikes\/m1\.2\/package-lock\.json spikes\/m1\.3\/package-lock\.json/);
+  assert.doesNotMatch(workflow, /npm install --ignore-scripts/);
 });

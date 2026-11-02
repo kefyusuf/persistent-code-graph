@@ -30,7 +30,9 @@ No cloud hosting, LLM/vector/RAG, MCP server, agent memory, daemon, dashboard, a
 
 ## M1.6.5 evidence and release gate
 
-- RED: three new contract tests, two failed (missing root dependencies and residual spike paths); GREEN: all three passed. Local offline acceptance: **150/150**, `OFFLINE_ONLY`.
+- RED: three new contract tests, two failed (missing root dependencies and residual spike paths); GREEN: all three passed. Local offline acceptance: **151/151**, `OFFLINE_ONLY`.
 - Canonical runtime resolves only from root `package.json` and `node_modules`; root `package-lock.json` pins exact package versions and integrity. Legacy M1.3 fixture installation is retained only for its own tests.
-- CI must install root pinned dependencies and execute a second real-grammar scenario from a copied `src/` directory with no `spikes/` directory. Expected: **150 offline + 17 real = 167 total**, no skips. Until verified on the final commit, **do not claim acceptance**.
+- CI must install root pinned dependencies and execute a second real-grammar scenario from a copied `src/` directory with no `spikes/` directory. Expected: **151 offline + 17 real = 168 total**, no skips. Until verified on the final commit, **do not claim acceptance**.
 - Scope unchanged: no new language, semantic graph, MCP, daemon, embeddings, or agent memory. Existing draft PR stack remains unmerged.
+
+- Initial PR #7 CI attempt failed because a stale workflow copy did not install the canonical root dependencies. Corrected workflow and regression assertion are part of the follow-up commit; final CI verification remains required.
