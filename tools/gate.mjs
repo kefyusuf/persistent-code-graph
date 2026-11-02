@@ -36,10 +36,23 @@ export function tapSummary(output) {
   return { tests, pass, fail, skipped, cancelled };
 }
 export function acceptanceStatus(mode, results) {
-  if (results.some(g=>g.status==='failed')) return 'FAIL';
-  if (results.some(g=>g.status==='blocked')) return 'BLOCKED';
-  if (results.some(g=>g.status==='skipped')) return 'BLOCKED';
-  if (results.length !== gatePlan(mode).length) return 'BLOCKED';
-  if (results.some(g=>g.status!=='passed'||g.skipped!==0||g.cancelled!==0)) return 'FAIL';
-  return mode==='full'?'PASS':'OFFLINE_ONLY';
+  const expected = gatePlan(mode);
+  if (!Array.isArray(results)) return 'BLOCKED';
+  if (results.some(g => g?.status === 'failed')) return 'FAIL';
+  if (results.some(g => g?.status === 'blocked' || g?.status === 'skipped')) return 'BLOCKED';
+  if (results.length !== expected.length) return 'BLOCKED';
+
+  // A count of green suites is not evidence that the *required* suites ran.
+  // A duplicate/unknown id must never stand in for the real parser gate.
+  const ids = new Set(results.map(g => g?.id));
+  if (ids.size !== expected.length || expected.some(g => !ids.has(g.id))) return 'BLOCKED';
+  if (results.some(g => g.status !== 'passed')) return 'FAIL';
+
+  for (const g of results) {
+    const counts = [g.tests, g.pass, g.fail, g.skipped, g.cancelled];
+    if (counts.some(n => !Number.isSafeInteger(n) || n < 0)) return 'BLOCKED';
+    if (g.fail !== 0 || g.skipped !== 0 || g.cancelled !== 0) return 'FAIL';
+    if (g.tests === 0 || g.pass !== g.tests) return 'BLOCKED';
+  }
+  return mode === 'full' ? 'PASS' : 'OFFLINE_ONLY';
 }
