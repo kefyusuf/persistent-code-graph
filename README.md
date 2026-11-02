@@ -15,13 +15,17 @@ A deliberately small, offline-first code indexing project. **Not production-read
 Node.js 22+, Git and PHP CLI (for legacy temporary-parser tests). All offline contracts use Node.js built-in tests. Actual grammar tests require the pinned `web-tree-sitter@0.27.1` and `tree-sitter-wasm@2.0.4` dependencies.
 
 ```sh
-# Does not install network dependencies. This is NOT parser acceptance.
+# Install the locked legacy TypeScript dependency before running even offline tests.
+# Installation needs package registry access or a pre-populated, trusted npm cache.
+npm ci --ignore-scripts --no-audit --no-fund --prefix spikes/m1.2
+
+# Offline means no real WASM grammar gate; it does not mean zero npm dependencies.
+# The runner itself makes no network requests. This is NOT parser acceptance.
 node tools/verify-gates.mjs --mode offline
 
-# Locked dependencies for canonical runtime and historical grammar tests:
+# Additional pinned dependencies for the canonical runtime and historical grammar tests:
 npm ci --ignore-scripts --no-audit --no-fund
 npm ci --ignore-scripts --no-audit --no-fund --prefix spikes/m1.3
-npm ci --ignore-scripts --no-audit --no-fund --prefix spikes/m1.2
 
 # Full acceptance, including a standalone src/ package with no spikes tree:
 node tools/verify-gates.mjs --mode full

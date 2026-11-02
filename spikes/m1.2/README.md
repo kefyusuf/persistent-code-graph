@@ -10,10 +10,11 @@ This small, isolated test project probes whether PHP and TypeScript parsers can 
 - PHP CLI with tokenizer enabled (tested: 8.4.24).
 - No API key, network service, database, or LLM.
 
-The test runner first tries `require('typescript')` and then a globally installed TypeScript module (`npm root -g`). If neither is available, install TypeScript with `npm install --no-save typescript` **when network access is available**. PHP must be on `PATH`.
+The test runner first tries `require('typescript')` and then a globally installed TypeScript module (`npm root -g`). For a reproducible checkout use the committed `package-lock.json` and install with `npm ci --ignore-scripts --no-audit --no-fund` **when network access or an already populated npm cache is available**. PHP must be on `PATH`. Offline test execution does not automatically install dependencies.
 
 ```sh
-cd code-graph-spike-m1.2
+cd spikes/m1.2
+npm ci --ignore-scripts --no-audit --no-fund
 npm test
 ```
 
@@ -51,4 +52,4 @@ The captured test outputs are in `reports/`:
 4. Compare normalized facts to the expected canonical fixture outputs without losing references or byte ranges.
 5. Only then select the M1 implementation parser/runtime and begin RED tests for durable index storage.
 
-See `../code-graph-m0/M1.2-PARSER-FEASIBILITY-SPIKE.md` for the decision record.
+See [the M1.2 parser feasibility decision record](../../docs/M1.2-PARSER-FEASIBILITY-SPIKE.md).

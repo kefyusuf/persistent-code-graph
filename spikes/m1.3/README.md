@@ -1,6 +1,6 @@
 # M1.3 — Tree-sitter Parser Compatibility Gate
 
-**Status: BLOCKED (grammar execution not verified).** The offline file-facts contract tests pass (12/12); the 12 real grammar tests are **not passed** because pinned packages cannot be fetched in the current runtime. Do not use this spike as a production parser or claim broad language support.
+**Status: REAL-GRAMMAR GATE ACCEPTED ON GITHUB CI; experimental parser only.** The original local run was **BLOCKED** because pinned packages could not be fetched in that environment. Subsequently, all **12 M1.3 real Tree-sitter tests passed** in the [PR #1 head CI run 41352198935](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41352198935) on November 1, 2026 (136/136 total baseline tests). This supersedes the historical blocked gate status, not the limits on syntax coverage. Do not use this isolated spike as a production semantic parser or claim broad language support.
 
 ## Scope
 
@@ -11,20 +11,20 @@ The source AST is authoritative. Unsupported syntax remains unclaimed; all suppo
 ## Requirements and reproducibility
 
 - Node.js >=22, tested offline contract runner on Node.js 22.16.0.
-- When package access is available: install pinned `web-tree-sitter@0.27.1` and `tree-sitter-wasm@2.0.4` via the exact-version `package.json`.
-- **No lockfile is bundled** because dependency fetching and lockfile generation were unavailable here. A successful clean install, generated lockfile, dependency provenance review and independent cross-platform grammar execution are necessary before the gate is eligible to pass.
+- Install the pinned `web-tree-sitter@0.27.1` and `tree-sitter-wasm@2.0.4` through the committed `package-lock.json` using `npm ci`.
+- The original isolated experiment had no lockfile because package fetching was unavailable; the staged repository **now commits `spikes/m1.3/package-lock.json`**, and GitHub CI enforces reproducible installation. Cross-platform validation remains separate from the accepted Linux grammar gate.
 - At runtime, WASM is loaded exclusively from installed packages, **never** fetched from the network. The parser loader checks package versions and hashes grammar files.
 
 ```bash
-cd code-graph-spike-m1.3
-npm run test:offline   # currently passes without dependencies
-npm install --ignore-scripts
+cd spikes/m1.3
+npm ci --ignore-scripts --no-audit --no-fund
+npm run test:offline   # contract fixtures
 npm run check:deps     # fails explicitly if missing or wrong package versions
-npm run test:grammar   # requires real Tree-sitter runtime and WASM grammars
-npm test               # full gate; blocked until grammar tests pass
+npm run test:grammar   # actual pinned Tree-sitter runtime and WASM grammars
+npm test               # local spike test suite
 ```
 
-If `npm install` fails, do not use `--force` to bypass integrity checks or substitute unverified WASM artifacts. When packages become accessible, first review the resolved npm lockfile, run the full gate and commit the lockfile into an actual project repository only after approval.
+If `npm ci` fails due to unavailable dependencies, do not use `--force` to bypass integrity checks or substitute unverified WASM artifacts. The previously completed CI acceptance remains historical evidence; a new test run must fail closed when dependencies are missing.
 
 ## Files
 
@@ -38,20 +38,20 @@ If `npm install` fails, do not use `--force` to bypass integrity checks or subst
 
 ## Known limitations
 
-- Tree-sitter grammar node types were inspected against upstream PHP and TypeScript `node-types.json`, but compatibility of the installed WASM builds has **not** been executed.
+- Compatibility of the pinned WASM grammar builds was executed and accepted on Linux CI with 12 real-grammar fixture tests; this does **not** establish arbitrary-code correctness, complete semantic resolution, or Windows compatibility.
 - `spanForNode` validates raw bytes against the syntax node's source text before returning offsets. Parser-specific index units and Unicode behavior remain a real-grammar gate.
 - Import extraction supports only a small TS named-import subset; PHP resolution is intentionally absent.
 - Nested relationships and scopes are not yet an accepted full M1.1 schema implementation.
 - The `tree-sitter-wasm` asset package includes more languages than the two test targets; do not infer that a production binary must ship every grammar.
-- In the absence of package access, actual grammar integration is blocked and the milestone must remain open.
+- A fresh local grammar run without installed pinned dependencies remains **blocked**; that environmental condition does not invalidate the explicitly recorded successful GitHub CI run.
 
-## Follow-up when dependency access is restored
+## Remaining validation after the accepted Linux grammar gate
 
-1. Run `npm install --ignore-scripts` and review its lockfile, provenance, integrity fields and licensing.
-2. Run `npm run check:deps && npm test`; investigate any observed AST mismatches, do not modify expected facts to hide errors.
-3. Verify the same test suite on Windows and Linux with explicit timestamps, exact grammar hashes and machine-readable results.
-4. Add source position tests spanning Unicode, CRLF and recovered syntax nodes where the real runtime reveals differences.
-5. Only after the grammar gate is fully green, make a decision about the production parser/runtime and the M1 durable index milestone.
+1. Use `npm ci --ignore-scripts` with the committed lockfile; review dependency provenance, integrity fields and licensing whenever locked versions change.
+2. Run `npm run check:deps && npm test`; investigate observed AST mismatches rather than modifying expected facts to hide errors.
+3. Validate the same suite on Windows as a **separate** portability gate, recording timestamps, grammar hashes and machine-readable results.
+4. Extend source-position coverage for Unicode, CRLF and recovered syntax nodes only when justified by specific reproducible failures.
+5. Treat this narrow syntax-grammar acceptance as distinct from production-runtime or cross-file semantic graph readiness.
 
 ## Source references
 
