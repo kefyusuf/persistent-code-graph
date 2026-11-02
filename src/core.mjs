@@ -3,7 +3,7 @@
  * Provenance intentionally travels with every result: freshness != parser quality. */
 import { resolve } from 'node:path';
 import { refreshFileFacts } from './incremental/refresh.mjs';
-import { verifiedQuery, verifiedQueryBatch } from '../spikes/m1.4.2/src/query.mjs';
+import { verifiedQuery, verifiedQueryBatch } from './query/query.mjs';
 import { prepareTreeSitterProvider } from './parser/provider.mjs';
 
 const fail=(code,message)=>Object.assign(new Error(`${code}: ${message}`),{code});

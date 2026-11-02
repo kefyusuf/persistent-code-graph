@@ -1,33 +1,28 @@
 # Persistent Code Graph — Project Status
 
-Updated: 2026-11-02. This status reflects the M1.6.3 implementation commit; check the latest PR head and CI before merge.
+**As of 2026-11-02 — M1.6.4 candidate on GitHub branch; not production-ready.**
 
-| Milestone | Evidence / state |
-|---|---|
-| M0–M1.1 | Documented scope, invariants, language adapter, and file-facts contracts |
-| M1.2 | Temporary-parser feasibility: 11 offline tests |
-| M1.3 | Real Tree-sitter PHP/TypeScript/TSX grammar gate passed in GitHub Actions |
-| M1.4–M1.4.2 | Experimental persistent store, working-tree inventory, and verified bounded queries |
-| M1.5–M1.5.2 | Parser/store integration and fail-closed acceptance runner with pinned lockfiles |
-| M1.6 | Canonical `src/core.mjs` and `src/index.mjs`; API gate passed |
-| M1.6.1 | Canonical `src/parser/`; 144 tests passed in CI |
-| M1.6.2 | Canonical `src/storage/`; 150 tests passed in CI |
-| M1.6.3 | Canonical `src/incremental/`; **156/156 tests passed** on implementation commit `4390cdbdd30f4b03adea402635b2b4dafe127329` |
+| Milestone | State | Evidence |
+|---|---|---|
+| M0–M1.1 | Design recorded | Scope, constraints, universal file-facts model |
+| M1.2 | Prototype complete | Temporary parser contract tests |
+| M1.3 / M1.5 | Real parser gate confirmed by previous CI | PHP/TypeScript/TSX Tree-sitter test suites; limited fixtures |
+| M1.4–M1.5.1 | Independent prototypes | Persisted snapshots, incremental refresh, verified single/batch queries |
+| M1.5.2 | Repo baseline PR #1 | Reproducible acceptance runner / lockfiles |
+| M1.6 | Canonical API PR #2 | Public `openCodeGraph()` and regression gates |
+| M1.6.1 | Parser migration PR #3 | `src/parser/` ownership and shims |
+| M1.6.2 | Storage migration PR #4 | `src/storage/` ownership and shims |
+| M1.6.3 | Incremental migration PR #5 | `src/incremental/` ownership and shims; previous CI 156/156 |
+| M1.6.4 | **Pending CI / review** | `src/query/query.mjs`; seven new migration tests; local offline 147/147 |
 
-## Acceptance and PR chain
+## M1.6.4 evidence and release gate
 
-- M1.6.3 offline gates: 140/140 passed. Real grammar/integration gates: 16/16 passed. The complete acceptance runner reported `PASS` on [GitHub Actions run 41406157939](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41406157939).
-- Branch: `refactor/m1.6.3-canonical-incremental`; Draft [PR #5](https://github.com/kefyusuf/persistent-code-graph/pull/5) based on the M1.6.2 branch.
-- PR #1–#5 are stacked Draft pull requests. **Do not merge** until review, ordered branch integration, and CI on the final head are complete. `main` remains unchanged by the M1.6.x work.
-- The local offline runner reports `OFFLINE_ONLY`, never full parser acceptance.
+- RED: module-resolution failure for the deliberately missing canonical query module. GREEN: seven newly added tests pass.
+- Local offline: **147/147** tests, all 13 suites passed. This is `OFFLINE_ONLY`, not proof of real-grammar acceptance.
+- Real parser gate: **16** tests in three real-grammar suites must run against this branch on GitHub Actions, not skipped. Do not claim **163/163** until the final commit's CI is verified.
+- Query implementation moved unchanged. Old spike paths are re-export-only shims; no schema, cache identity or semantic graph changes.
+- The pull-request stack is deliberately left unmerged pending review and evidence.
 
-## Scope / remaining risks
+## Scope boundaries
 
-- This remains a syntax-only file-facts index with partial language coverage, not a resolved cross-file semantic code graph.
-- Every refresh rehashes eligible files; verified read queries rehash twice. There are no measured production-scale token savings.
-- Crash recovery for writer locks, Windows crash durability, and concurrent filesystem races remain unproven.
-- Out of scope: MCP, agent memory, LLM calls, embedding/RAG, dashboard, cloud, and automatic background processes.
-
-## Next narrow milestone
-
-M1.6.4: move the existing bounded verified query implementation to `src/query/`, preserving fail-closed stale/unknown behavior and historical import compatibility; tests → PR → full CI. No feature expansion.
+No cloud hosting, LLM/vector/RAG, MCP server, agent memory, daemon, dashboard, automatic background indexing or cross-file call-target inference. Production portability and token savings remain unproven.

@@ -43,10 +43,10 @@ test('legacy modules are re-export-only; consumers use the canonical inventory a
  }
  const core=readFileSync(new URL('../src/core.mjs',import.meta.url),'utf8');
  const provider=readFileSync(new URL('../src/parser/provider.mjs',import.meta.url),'utf8');
- const query=readFileSync(new URL('../spikes/m1.4.2/src/query.mjs',import.meta.url),'utf8');
+ const query=readFileSync(new URL('../src/query/query.mjs',import.meta.url),'utf8');
  assert.match(core,/from ['"]\.\/incremental\/refresh\.mjs['"]/);
  assert.match(provider,/from ['"]\.\.\/incremental\/inventory\.mjs['"]/);
- assert.match(query,/from ['"]\.\.\/\.\.\/\.\.\/src\/incremental\/inventory\.mjs['"]/);
+ assert.match(query,/from ['"]\.\.\/incremental\/inventory\.mjs['"]/);
 });
 test('real Git inventory preserves working tree precedence and exclusion rules',async t=>{
  const {checkoutRoot,put}=await sandbox(t);

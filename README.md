@@ -6,9 +6,9 @@ A deliberately small, offline-first code indexing project. **Not production-read
 
 - M0–M1.1: documented product, architecture, and symbol/fact contracts.
 - M1.2: temporary PHP tokenizer / TypeScript parser feasibility exercise; not the production parser.
-- M1.3: pinned real Tree-sitter grammar gate **passed in GitHub Actions** for the M1.6.3 branch.
+- M1.3: real Tree-sitter grammar gate verified on GitHub CI (not production-semantic-graph acceptance).
 - M1.4–M1.5.1: tested experimental store, file inventory, refresh and bounded read-only queries; not a complete semantic cross-file graph.
-- M1.5.2: fail-closed acceptance runner with committed lockfiles; latest M1.6.3 code CI ran 156 tests successfully.
+- M1.5.2: single command and CI workflow for fail-closed acceptance evidence. No new runtime feature.
 
 ## Prerequisites
 
@@ -45,7 +45,7 @@ See [M1.5.2 decision record](docs/M1.5.2-ACCEPTANCE-RUNNER.md) and [project stat
 
 ## M1.6 — single orchestration owner (in progress)
 
-The first non-spike entry point is `src/index.mjs`, exported as `openCodeGraph` by the root `package.json`. It requires a **real, locally installed** Tree-sitter provider. The orchestration now lives in `src/core.mjs`; the M1.5 import path re-exports the same implementation for existing regression tests. Parser, persistent storage, Git inventory, and explicit refresh now have canonical implementations under `src/`; bounded verified queries remain in `spikes/` and will be moved in a later, separately gated step.
+The first non-spike entry point is `src/index.mjs`, exported as `openCodeGraph` by the root `package.json`. It requires a **real, locally installed** Tree-sitter provider. The orchestration now lives in `src/core.mjs`; the M1.5 import path re-exports the same implementation for existing regression tests. Parser, storage, inventory/refresh, and verified query implementations now have canonical owners under `src/`; historical spike paths are compatibility re-exports.
 
 ```js
 import { openCodeGraph } from './src/index.mjs';
@@ -57,10 +57,14 @@ const result = await graph.query('declarations', { name: 'MyClass' });
 
 `npm run test:core` exercises the public API contract offline, without substituting an experimental parser into the public entry point. `npm run test:grammar` requires the pinned Tree-sitter packages installed in `spikes/m1.3/`. The full gate runner includes both suites. The codebase still stores **file-local syntax facts**, not a cross-file resolved semantic graph, and is not production-ready.
 
-## M1.6.2 canonical storage
+## M1.6.2 canonical storage (draft)
 
 `src/storage/store.mjs` is the single persistent index implementation. The previous `spikes/m1.4/src/store.mjs` path remains a compatibility re-export, while refresh/query consumers now import canonical storage directly. The schema, canonical serialization, and on-disk snapshot format are unchanged. Run `node tools/verify-gates.mjs --mode offline` locally; only CI full mode (including real Tree-sitter grammars) can accept this PR. See `docs/M1.6.2-CANONICAL-STORAGE-MIGRATION.md`.
 
-## M1.6.3 canonical inventory and refresh
+## M1.6.3 canonical inventory and refresh (draft)
 
-`src/incremental/inventory.mjs` and `src/incremental/refresh.mjs` now own the existing Git-aware working-tree scan and explicit refresh. The M1.4.1 paths are compatibility-only re-exports; `src/core.mjs` and the real parser provider use canonical modules. The index format, parser identities, source-verification boundaries, and reparse behavior are unchanged. The verified query module remains under `spikes/` for a later separate migration. Run `npm run test:incremental` or `node tools/verify-gates.mjs --mode offline`; the M1.6.3 implementation commit passed full CI (156/156); verify the latest PR head after every change. See `docs/M1.6.3-CANONICAL-INCREMENTAL-MIGRATION.md`.
+`src/incremental/inventory.mjs` and `src/incremental/refresh.mjs` now own the existing Git-aware working-tree scan and explicit refresh. The M1.4.1 paths are compatibility-only re-exports; `src/core.mjs` and the real parser provider use canonical modules. The index format, parser identities, source-verification boundaries, and reparse behavior are unchanged. The verified query module is migrated to `src/query/query.mjs` in M1.6.4. Run `npm run test:incremental` or `node tools/verify-gates.mjs --mode offline`; only full CI acceptance with the real grammars can close the PR gate. See `docs/M1.6.3-CANONICAL-INCREMENTAL-MIGRATION.md`.
+
+## M1.6.4 canonical verified queries (draft)
+
+`src/query/query.mjs` owns the bounded single and batch read boundaries. The M1.4.2 and M1.5.1 paths are compatibility re-exports and `src/core.mjs` uses the canonical implementation. Freshness double-scans, parser identity checks, output budgets, snapshot format, and partial coverage are unchanged. The new migration suite is `npm run test:query`; full CI acceptance is required before the refactor can be merged. See `docs/M1.6.4-CANONICAL-VERIFIED-QUERY-MIGRATION.md`.
