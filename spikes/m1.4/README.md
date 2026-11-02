@@ -29,4 +29,4 @@ Parser / grammar loading, code graph relations, source inventory, Git lifecycle,
 - `reports/GREEN-1.txt`: 14/14 implementation baseline.
 - `reports/GREEN-2.txt`: 18/18 including expanded regression tests.
 
-The M1.3 grammar gate is still blocked. See `../code-graph-m0/M1.4-PERSISTENT-INDEX-STORE-SPIKE.md` in the combined package.
+At the time of this isolated store experiment, the M1.3 grammar gate was locally blocked; it later passed on GitHub CI ([run 41352198935](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41352198935)). See [the M1.4 persistent store decision record](../../docs/M1.4-PERSISTENT-INDEX-STORE-SPIKE.md).
