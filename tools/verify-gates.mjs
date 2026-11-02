@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { resolve, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { OFFLINE_GATES, REAL_GRAMMAR_GATES, gatePlan, tapSummary, acceptanceStatus } from './gate.mjs';
+import { assertSafeReportDestination } from './report-boundary.mjs';
 
 const root = resolve(fileURLToPath(new URL('../', import.meta.url)));
 let mode = 'offline', output = 'reports/m1.5.2/verification.json';
@@ -16,10 +17,9 @@ for(let i=2;i<process.argv.length;i++) {
   else { console.error('Usage: node tools/verify-gates.mjs [--mode offline|full] [--output PATH]');process.exit(64); }
 }
 try { gatePlan(mode); } catch(e) { console.error(e.message); process.exit(64); }
-const reportFile=resolve(root,output);
-if(!relative(root,reportFile) || relative(root,reportFile).startsWith('..') || relative(root,reportFile).startsWith('/')) {
-  console.error('Report output must be within project directory');process.exit(64);
-}
+let reportFile;
+try { reportFile=assertSafeReportDestination(root,output); }
+catch(e){console.error(`Report output rejected: ${e.message}`);process.exit(64);}
 mkdirSync(dirname(reportFile),{recursive:true});
 const results=[];
 function writeLog(id, body){

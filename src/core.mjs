@@ -8,6 +8,7 @@ import { prepareTreeSitterProvider } from './parser/provider.mjs';
 
 const fail=(code,message)=>Object.assign(new Error(`${code}: ${message}`),{code});
 const PROVIDER_TYPES=new Set(['experimental-temporary', 'real-tree-sitter-unvalidated']);
+const QUERY_SELECTORS=new Set(['name','kind','role','file','spelling','limit','maxBytes']);
 
 export function createFileFactsPipeline({checkoutRoot,indexRoot,provider}) {
  if(typeof checkoutRoot!=='string'||!checkoutRoot||typeof indexRoot!=='string'||!indexRoot)
@@ -34,6 +35,8 @@ export function createFileFactsPipeline({checkoutRoot,indexRoot,provider}) {
      const {parserIdentity:discardIdentity,operation:discardOperation,...safe}=selectors;
      if(discardIdentity!==undefined || discardOperation!==undefined)
        throw fail('INVALID_PIPELINE','parser identity and operation cannot be overridden');
+     for(const key of Object.keys(safe))
+       if(!QUERY_SELECTORS.has(key))throw fail('INVALID_PIPELINE',`unsupported selector: ${key}`);
      const r=await verifiedQuery({checkoutRoot:checkout,indexRoot:index,
        parserIdentity:provider.parserIdentity,operation,...safe});
      return {...r,parserProvenance:label,semanticGraph:false};

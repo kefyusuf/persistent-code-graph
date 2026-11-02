@@ -128,7 +128,7 @@ test('malformed source coverage is not promoted to complete',async()=>{
  const s=await sandbox({'a.php':'<?php class Invoice { public function foo( {'});try{
   const app=pipeline(s,provider());await app.refresh();
   const q=await app.query('declarations');
-  assert.equal(q.state,'verified');assert.notEqual(q.coverage.declarations,'complete');
+  assert.equal(q.state,'verified');assert.equal(q.coverage,'failed');
  }finally{await s.close()}
 });
 

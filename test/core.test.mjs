@@ -104,3 +104,31 @@ test('a graph opened on an empty checkout accepts its first supported source lan
   assert.equal(updated.counts.parsed,1);
   assert.equal((await graph.query('status')).state,'verified');
 });
+
+
+test('single queries reject checkout and index root overrides',async t=>{
+  const paths=await sandbox(t);
+  const graph=createFileFactsPipeline({...paths,provider:fake()});
+  await graph.refresh();
+  for(const selectors of [
+    {checkoutRoot:paths.checkoutRoot},
+    {indexRoot:paths.indexRoot},
+    {testBeforeFinalVerification:async()=>{}},
+    {unexpected:true},
+  ]){
+    await assert.rejects(graph.query('status',selectors),{code:'INVALID_PIPELINE'});
+  }
+  assert.equal((await graph.query('status',{limit:1,maxBytes:500})).state,'verified');
+});
+
+test('single queries never read a foreign checkout through injected selectors',async t=>{
+  const one=await sandbox(t);
+  const two=await sandbox(t);
+  await writeFile(join(two.checkoutRoot,'foreign.php'),'<?php class Foreign {}');
+  const graphOne=createFileFactsPipeline({...one,provider:fake()});
+  const graphTwo=createFileFactsPipeline({...two,provider:fake()});
+  await graphOne.refresh();await graphTwo.refresh();
+  await assert.rejects(graphOne.query('declarations',{
+    checkoutRoot:two.checkoutRoot,indexRoot:two.indexRoot,name:'Foreign'
+  }),{code:'INVALID_PIPELINE'});
+});
