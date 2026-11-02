@@ -48,3 +48,45 @@ test('rejects a dangling indexRoot symlink rather than guessing its destination'
   await symlink(join(root, 'unavailable-target'), alias, 'dir');
   assert.throws(() => new CodeGraphStore({ checkoutRoot, indexRoot: join(alias, 'cache') }), { code:'INVALID_STORE' });
 });
+
+const minimalFacts = () => ({
+  file:'a.ts',language:'typescript',contentHash:'a'.repeat(64),
+  parser:{cacheIdentity:'b'.repeat(64)},declarations:[],references:[],relations:[],
+  diagnostics:[],coverage:{declarations:'partial',references:'partial',calls:'partial'},
+});
+
+for (const directory of ['objects','snapshots','heads','locks']) {
+  test(`rejects managed ${directory}/ symlink before publication writes`, async t => {
+    const {root,checkoutRoot} = await sandbox(t);
+    const indexRoot=join(root,'external-cache');
+    await mkdir(indexRoot);
+    await symlink(checkoutRoot,join(indexRoot,directory),'dir');
+    const store=new CodeGraphStore({checkoutRoot,indexRoot});
+    await assert.rejects(
+      store.publish({expectedHead:null,files:[minimalFacts()]}),
+      {code:'INVALID_STORE'},
+    );
+    assert.deepEqual(await readdir(checkoutRoot),[]);
+  });
+}
+
+test('read refuses an internal heads/ symlink even when no head exists', async t => {
+  const {root,checkoutRoot}=await sandbox(t);
+  const indexRoot=join(root,'external-cache');
+  await mkdir(indexRoot);
+  await symlink(checkoutRoot,join(indexRoot,'heads'),'dir');
+  const store=new CodeGraphStore({checkoutRoot,indexRoot});
+  await assert.rejects(store.read(),{code:'INVALID_STORE'});
+});
+
+test('rejects an indexRoot replaced by a checkout symlink after store construction', async t => {
+  const {root,checkoutRoot}=await sandbox(t);
+  const indexRoot=join(root,'deferred-index');
+  const store=new CodeGraphStore({checkoutRoot,indexRoot});
+  await symlink(checkoutRoot,indexRoot,'dir');
+  await assert.rejects(
+    store.publish({expectedHead:null,files:[]}),
+    {code:'INVALID_STORE'},
+  );
+  assert.deepEqual(await readdir(checkoutRoot),[]);
+});
