@@ -13,25 +13,55 @@ const EXTENSIONS = new Map([
 export function detectLanguage(file) {return EXTENSIONS.get(extname(file).toLowerCase())??null;}
 
 /**
- * Different Tree-sitter JS bindings can expose input indices in byte or JS
- * string units. Rather than assume one, require that the *actual node text*
- * matches at the chosen boundary. An uncertain offset fails closed.
+ * Different Tree-sitter JS bindings can expose input indices in UTF-8 bytes
+ * or JS UTF-16 code units. Keep both interpretations and require exact text.
+ * Build source offsets once per extraction, never once per emitted occurrence.
  */
-export function spanForNode(source, node, allowEmpty=false) {
-  if(!Number.isSafeInteger(node.startIndex)||!Number.isSafeInteger(node.endIndex)) throw new Error('OFFSET_INCONSISTENCY: missing integer boundaries');
+export function createIndexedSpanResolver(source) {
   const bytes=Buffer.from(source,'utf8');
-  const needle=Buffer.from(node.text,'utf8');
-  const candidates=[
-    [node.startIndex,node.endIndex],
-    [Buffer.byteLength(source.slice(0,node.startIndex),'utf8'),Buffer.byteLength(source.slice(0,node.endIndex),'utf8')],
-  ];
-  const matched=candidates.find(([start,end])=>start>=0&&end<=bytes.length&&(allowEmpty?end>=start:end>start)&&bytes.subarray(start,end).equals(needle));
-  if(!matched) throw new Error(`OFFSET_INCONSISTENCY: ${node.type} @ ${node.startIndex}..${node.endIndex}`);
-  const [startByte,endByte]=matched;
-  const lineAt=offset=>1+(bytes.subarray(0,offset).toString('utf8').match(/\n/g)?.length??0);
-  return {startByte,endByte,startLine:lineAt(startByte),endLine:lineAt(endByte)};
+  const utf16Bytes=new Uint32Array(source.length+1);
+  let offset=0;
+  for(let i=0;i<source.length;){
+    const code=source.charCodeAt(i);
+    // A prefix ending between surrogate halves encodes a replacement character
+    // (three bytes), whereas the complete pair encodes as four bytes.
+    if(code>=0xd800&&code<=0xdbff&&i+1<source.length){
+      const next=source.charCodeAt(i+1);
+      if(next>=0xdc00&&next<=0xdfff){
+        utf16Bytes[i+1]=offset+3;
+        offset+=4;utf16Bytes[i+2]=offset;i+=2;continue;
+      }
+    }
+    offset+=code<=0x7f?1:code<=0x7ff?2:3;
+    utf16Bytes[++i]=offset;
+  }
+  const lineStarts=[0];
+  for(let i=0;i<bytes.length;i++)if(bytes[i]===10)lineStarts.push(i+1);
+  const jsOffset=index=>utf16Bytes[index<0?Math.max(0,source.length+index):Math.min(index,source.length)];
+  const lineAt=byteOffset=>{
+    let low=0,high=lineStarts.length;
+    while(low<high){const mid=(low+high)>>>1;if(lineStarts[mid]<=byteOffset)low=mid+1;else high=mid;}
+    return low; // lineStarts[0] denotes 1-based line one.
+  };
+  return function indexedSpan(node,allowEmpty=false){
+    if(!Number.isSafeInteger(node.startIndex)||!Number.isSafeInteger(node.endIndex))
+      throw new Error('OFFSET_INCONSISTENCY: missing integer boundaries');
+    const needle=Buffer.from(node.text,'utf8');
+    const candidates=[
+      [node.startIndex,node.endIndex],
+      [jsOffset(node.startIndex),jsOffset(node.endIndex)],
+    ];
+    const matched=candidates.find(([start,end])=>start>=0&&end<=bytes.length&&(allowEmpty?end>=start:end>start)&&bytes.subarray(start,end).equals(needle));
+    if(!matched)throw new Error('OFFSET_INCONSISTENCY: '+node.type+' @ '+node.startIndex+'..'+node.endIndex);
+    const [startByte,endByte]=matched;
+    return {startByte,endByte,startLine:lineAt(startByte),endLine:lineAt(endByte)};
+  };
 }
 
+/** Compatibility helper for single-node consumers; file extraction shares one index. */
+export function spanForNode(source,node,allowEmpty=false){
+  return createIndexedSpanResolver(source)(node,allowEmpty);
+}
 const DECLARATIONS={
   typescript:{
     interface_declaration:'interface',function_declaration:'function',function_signature:'function',
@@ -83,13 +113,14 @@ export function canonicalizeFacts(facts){
 export function fileFactsFromTree(language,file,source,root,parserIdentity){
  if(!DECLARATIONS[language]) throw new Error('UNSUPPORTED_LANGUAGE:'+language);
  const declarations=[];const references=[];const diagnostics=[];
- const addDecl=(n,kind,name)=>{if(!name)return;declarations.push({kind,name,languageSyntaxKind:n.type,range:spanForNode(source,n)});};
- const addRef=(n,role,spelling,extra={})=>{if(!spelling)return;references.push({role,spelling,...extra,range:spanForNode(source,n)});};
+ const span=createIndexedSpanResolver(source);
+ const addDecl=(n,kind,name)=>{if(!name)return;declarations.push({kind,name,languageSyntaxKind:n.type,range:span(n)});};
+ const addRef=(n,role,spelling,extra={})=>{if(!spelling)return;references.push({role,spelling,...extra,range:span(n)});};
  let errorCount=0;
  function walk(n,parents=[]){
   if(isError(n)) {
     errorCount++;
-    if(diagnostics.length<30) diagnostics.push({code:'SYNTAX_ERROR',nodeType:n.type,range:spanForNode(source,n,true)});
+    if(diagnostics.length<30) diagnostics.push({code:'SYNTAX_ERROR',nodeType:n.type,range:span(n,true)});
   }
   const kind=DECLARATIONS[language][n.type];
   if(kind)addDecl(n,kind,nodeName(n));
@@ -124,7 +155,7 @@ export function fileFactsFromTree(language,file,source,root,parserIdentity){
   for(const child of children(n))walk(child,[...parents,n]);
  }
  walk(root);
- if(root.hasError && errorCount===0){diagnostics.push({code:'SYNTAX_ERROR',nodeType:root.type,range:spanForNode(source,root)});}
+ if(root.hasError && errorCount===0){diagnostics.push({code:'SYNTAX_ERROR',nodeType:root.type,range:span(root)});}
  const contentHash=sha256(Buffer.from(source,'utf8'));
  const idRecord=(kind,r)=>({...r,id:kind+':'+shortId(file,contentHash,r.range.startByte,r.range.endByte,r.kind??r.role,r.name??r.spelling,r.languageSyntaxKind??null)});
  return canonicalizeFacts({

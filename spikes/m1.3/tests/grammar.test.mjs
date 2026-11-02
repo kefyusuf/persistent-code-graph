@@ -78,3 +78,40 @@ test('real parser deterministic across repeated identical inputs',async()=>{
   const b=await extract('typescript','merging.ts');
   assert.deepEqual(a,b);
 });
+
+test('M1.6.12 real PHP/TS/TSX spans preserve UTF-8 byte positions after astral and CRLF',async()=>{
+  const cases=[
+    ['typescript','unicode-lines.ts','// 🧭\r\ninterface Box { value: number }\r\n','Box','interface Box'],
+    ['tsx','unicode-lines.tsx','// 🧭\r\nexport function Badge(){ return <span>🧭</span> }\r\n','Badge','function Badge'],
+    ['php','unicode-lines.php','<?php // 🧭\r\nclass Order { public function pay() {} }\r\n','Order','class Order'],
+  ];
+  for(const [language,file,source,name,fragment] of cases){
+    const facts=await extractWithRealGrammar(language,file,source);
+    assert.equal(facts.diagnostics.length,0,'unexpected diagnostics for '+file);
+    const declaration=facts.declarations.find(x=>x.name===name);
+    assert.ok(declaration,'declaration missing for '+file);
+    const first=Buffer.from(source,'utf8').indexOf(Buffer.from(fragment,'utf8'));
+    assert.equal(declaration.range.startByte,first,'wrong start byte for '+file);
+    assert.equal(declaration.range.startLine,2,'wrong start line for '+file);
+    assert.equal(declaration.range.endLine,2,'wrong end line for '+file);
+    assert.ok(Buffer.from(source,'utf8').subarray(declaration.range.startByte,declaration.range.endByte).toString('utf8').includes(name));
+  }
+});
+
+test('M1.6.12 repeated TS call spans remain deterministic and distinct',async()=>{
+  const count=160;
+  const source='// 🧭\r\n'+'tick();\r\n'.repeat(count);
+  const first=await extractWithRealGrammar('typescript','dense.ts',source);
+  const again=await extractWithRealGrammar('typescript','dense.ts',source);
+  assert.deepEqual(first,again);
+  assert.equal(first.diagnostics.length,0);
+  const calls=first.references.filter(x=>x.role==='call'&&x.spelling==='tick');
+  assert.equal(calls.length,count);
+  assert.equal(new Set(calls.map(x=>x.id)).size,count);
+  for(let i=0;i<count;i++){
+    const start=Buffer.byteLength('// 🧭\r\n'+'tick();\r\n'.repeat(i),'utf8');
+    assert.equal(calls[i].range.startByte,start);
+    assert.equal(calls[i].range.endByte,start+Buffer.byteLength('tick()'));
+    assert.equal(calls[i].range.startLine,2+i);
+  }
+});
