@@ -1,45 +1,33 @@
 # Persistent Code Graph — Project Status
 
-**As of 2026-11-01.** This local artifact has not been pushed to any remote repository.
+Updated: 2026-11-02. This status reflects the M1.6.3 implementation commit; check the latest PR head and CI before merge.
 
-| Milestone | State | Evidence |
-|---|---|---|
-| M0 | Design recorded | Product definition and architecture constraints |
-| M1.0–M1.1 | Design recorded | Language adapter and normalized facts models |
-| M1.2 | Independent experiment accepted | Temporary parser tests: 11/11 |
-| M1.3 | **BLOCKED** | Offline contract: 13/13; real Tree-sitter grammar: 12 unexecuted |
-| M1.4 | Independent experiment accepted | Persistent snapshot store: 18/18 |
-| M1.4.1 | Independent experiment accepted | Git inventory and incremental reuse: 21/21 |
-| M1.4.2 | Independent experiment accepted | Verified bounded queries: 26/26 |
-| M1.5 | **PROVISIONAL / BLOCKED** | Offline pipeline: 12/12; actual grammar: 3 unexecuted |
-| M1.5.1 | Independent experiment accepted | Verified batch query: 14/14 |
-| M1.5.2 | Acceptance runner offline passed | Runner tests: 6/6; all offline suites: **121/121** |
+| Milestone | Evidence / state |
+|---|---|
+| M0–M1.1 | Documented scope, invariants, language adapter, and file-facts contracts |
+| M1.2 | Temporary-parser feasibility: 11 offline tests |
+| M1.3 | Real Tree-sitter PHP/TypeScript/TSX grammar gate passed in GitHub Actions |
+| M1.4–M1.4.2 | Experimental persistent store, working-tree inventory, and verified bounded queries |
+| M1.5–M1.5.2 | Parser/store integration and fail-closed acceptance runner with pinned lockfiles |
+| M1.6 | Canonical `src/core.mjs` and `src/index.mjs`; API gate passed |
+| M1.6.1 | Canonical `src/parser/`; 144 tests passed in CI |
+| M1.6.2 | Canonical `src/storage/`; 150 tests passed in CI |
+| M1.6.3 | Canonical `src/incremental/`; **156/156 tests passed** on implementation commit `4390cdbdd30f4b03adea402635b2b4dafe127329` |
 
-**Full real parser gate:** BLOCKED (missing pinned npm packages); CI not yet run. Node.js 22/Linux environment.  
-**Repo handoff:** NOW RECOMMENDED. Create an empty repository so GitHub Actions can run the real grammar gate. Do not yet label the indexing engine production-ready.  
-**Out of scope:** MCP, cloud, LLM calls, embedding/RAG, multi-agent memory, dashboard, semantic resolution, and automatic background workers.
+## Acceptance and PR chain
 
-## M1.6: first canonical API bridge (pending CI)
+- M1.6.3 offline gates: 140/140 passed. Real grammar/integration gates: 16/16 passed. The complete acceptance runner reported `PASS` on [GitHub Actions run 41406157939](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41406157939).
+- Branch: `refactor/m1.6.3-canonical-incremental`; Draft [PR #5](https://github.com/kefyusuf/persistent-code-graph/pull/5) based on the M1.6.2 branch.
+- PR #1–#5 are stacked Draft pull requests. **Do not merge** until review, ordered branch integration, and CI on the final head are complete. `main` remains unchanged by the M1.6.x work.
+- The local offline runner reports `OFFLINE_ONLY`, never full parser acceptance.
 
-- `src/core.mjs` now owns the original M1.5 orchestration; the old spike import is a re-export, avoiding a second implementation.
-- `src/index.mjs` exports only `openCodeGraph` and does not expose the temporary parser to consumers.
-- Root package declares one entry point. No hosted service, daemon, MCP, embeddings, or LLM functionality added.
-- New public API contract: 4 offline tests passed locally; legacy offline suite remains green (125 tests overall).
-- New real-grammar public API test requires CI execution before acceptance. Until then M1.6 stays provisional.
-- Parsed facts remain language-limited, syntax-only, and partially covered. Production packaging / independent installation / portability are not yet supported.
+## Scope / remaining risks
 
-## M1.6.2: canonical storage migration (draft, pending CI)
+- This remains a syntax-only file-facts index with partial language coverage, not a resolved cross-file semantic code graph.
+- Every refresh rehashes eligible files; verified read queries rehash twice. There are no measured production-scale token savings.
+- Crash recovery for writer locks, Windows crash durability, and concurrent filesystem races remain unproven.
+- Out of scope: MCP, agent memory, LLM calls, embedding/RAG, dashboard, cloud, and automatic background processes.
 
-- Canonical `CodeGraphStore`, canonical JSON serialization, and manifest comparison moved unchanged to `src/storage/store.mjs`.
-- Historical storage module now re-exports only; refresh and query import the canonical owner.
-- RED: 6 new tests failed on the missing canonical module; GREEN: 6/6. Local gate: **134/134 offline**; this is **not** full acceptance.
-- Parser identity, immutable object hashes, snapshot version, lock behavior, working-tree freshness guarantees and public API are unchanged.
-- CI must pass **134 offline + 16 real grammar** tests on this PR's final commit. No merge performed.
+## Next narrow milestone
 
-## M1.6.3: canonical inventory and explicit refresh migration (draft, pending CI)
-
-- Added canonical implementations `src/incremental/inventory.mjs` and `src/incremental/refresh.mjs`; historical M1.4.1 imports now strictly re-export the same functions.
-- Canonical `src/core.mjs`, `src/parser/provider.mjs`, and existing bounded query module consume the moved implementations.
-- RED: 6 new tests failed on missing canonical modules; GREEN: all 6 passed. Full local offline gate: **140/140**, `OFFLINE_ONLY`.
-- Persistent snapshot format, working-tree source authority, SHA-256 validation, parsing reuse, and fail-closed verification unchanged.
-- Real grammar/integration tests (**16**) and GitHub Actions approval are **pending** for this branch. No merge, no new runtime feature.
+M1.6.4: move the existing bounded verified query implementation to `src/query/`, preserving fail-closed stale/unknown behavior and historical import compatibility; tests → PR → full CI. No feature expansion.
