@@ -9,6 +9,7 @@ export const OFFLINE_GATES = Object.freeze([
   { id: 'm1.5.1-batch', dir: 'spikes/m1.5.1', pattern: 'tests/*.test.mjs' },
   { id: 'm1.5.2-gate-contract', dir: 'tools', pattern: 'tests/gate.test.mjs' },
   { id: 'm1.6-core', dir: '.', pattern: 'test/core.test.mjs' },
+  { id: 'm1.6.1-parser-bridge', dir: '.', pattern: 'test/parser-migration.test.mjs' },
 ]);
 export const REAL_GRAMMAR_GATES = Object.freeze([
   { id: 'm1.3-real-grammar', dir: 'spikes/m1.3', pattern: 'tests/grammar.test.mjs' },

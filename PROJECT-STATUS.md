@@ -28,6 +28,15 @@
 - [PR #2](https://github.com/kefyusuf/persistent-code-graph/pull/2) is stacked on the already CI-verified [PR #1](https://github.com/kefyusuf/persistent-code-graph/pull/1), not on `main`.
 - `src/core.mjs` now owns the existing orchestration; the M1.5 import re-exports it to preserve prior tests.
 - Public `src/index.mjs` exposes only the real Tree-sitter opener `openCodeGraph`.
-- Local offline verification: **125/125 passed**. A new real parser entry-point test is pending CI evidence on PR #2.
+- Local offline verification: **125/125 passed**. The real parser entry-point test passed on [GitHub Actions run #41353335458](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41353335458).
 - No semantic cross-file edge resolution, MCP, background service, LLM, RAG or cloud layer was added.
 - The `spikes/` dependencies are intentionally transitional. Production packaging and Windows support remain unverified.
+
+## M1.6.1 — Canonical Parser Module Migration (Draft PR #3)
+
+- [PR #3](https://github.com/kefyusuf/persistent-code-graph/pull/3) is stacked on PR #2 and remains draft; `main` is unchanged.
+- Canonical parser ownership: `src/parser/{contract,runtime,provider}.mjs`, with re-export-only legacy paths.
+- The parser dependency installation and lockfiles stay under `spikes/m1.3` until a distinct packaging milestone.
+- Extractor source-code SHA-256 changes because ownership moved; previously stored facts must be re-parsed rather than reused with an incompatible identity.
+- **Full parser acceptance: PASS, 144/144 tests**, including 128 offline and 16 real grammar/integration tests on [GitHub Actions run #41355128869](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41355128869).
+- Not a production-ready cross-file semantic code graph. No MCP, memory, daemon, additional languages or automatic merge.

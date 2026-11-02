@@ -4,7 +4,7 @@
 import { resolve } from 'node:path';
 import { refreshFileFacts } from '../spikes/m1.4.1/src/refresh.mjs';
 import { verifiedQuery, verifiedQueryBatch } from '../spikes/m1.4.2/src/query.mjs';
-import { prepareTreeSitterProvider } from '../spikes/m1.5/src/tree-sitter-provider.mjs';
+import { prepareTreeSitterProvider } from './parser/provider.mjs';
 
 const fail=(code,message)=>Object.assign(new Error(`${code}: ${message}`),{code});
 const PROVIDER_TYPES=new Set(['experimental-temporary', 'real-tree-sitter-unvalidated']);
