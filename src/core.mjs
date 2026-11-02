@@ -2,7 +2,7 @@
  * Read-only query and explicit refresh. No daemon, watcher, MCP or hidden fallback.
  * Provenance intentionally travels with every result: freshness != parser quality. */
 import { resolve } from 'node:path';
-import { refreshFileFacts } from '../spikes/m1.4.1/src/refresh.mjs';
+import { refreshFileFacts } from './incremental/refresh.mjs';
 import { verifiedQuery, verifiedQueryBatch } from '../spikes/m1.4.2/src/query.mjs';
 import { prepareTreeSitterProvider } from './parser/provider.mjs';
 
