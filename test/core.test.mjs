@@ -59,3 +59,48 @@ test('user query cannot override parser identity through new core',async t=>{
   const api=createFileFactsPipeline({...paths,provider:fake()});
   await assert.rejects(api.query('status',{parserIdentity:()=>''}),{code:'INVALID_PIPELINE'});
 });
+
+test('refresh prepares newly observed languages before computing parser identities',async t=>{
+  const paths=await sandbox(t);
+  await writeFile(join(paths.checkoutRoot,'start.php'),'<?php class Start {}');
+  const prepared=new Set();
+  const provider={
+    provenance:'experimental-temporary',
+    async prepareLanguages(languages){for(const language of languages)prepared.add(language);},
+    parserIdentity(language){
+      if(!prepared.has(language))throw Object.assign(new Error('UNPREPARED_LANGUAGE'),{code:'UNPREPARED_LANGUAGE'});
+      return experimentalIdentity(language);
+    },
+    extract:experimentalExtract,
+  };
+  const graph=createFileFactsPipeline({...paths,provider});
+  assert.equal((await graph.refresh()).counts.parsed,1);
+  await writeFile(join(paths.checkoutRoot,'later.ts'),'interface Later { value: number }');
+  const update=await graph.refresh();
+  assert.equal(update.counts.parsed,1);
+  assert.equal(update.counts.reused,1);
+  assert.equal((await graph.query('status')).state,'verified');
+  assert.deepEqual([...prepared].sort(),['php','typescript']);
+});
+
+test('a graph opened on an empty checkout accepts its first supported source language',async t=>{
+  const paths=await sandbox(t);
+  const prepared=new Set();
+  const provider={
+    provenance:'experimental-temporary',
+    async prepareLanguages(languages){for(const language of languages)prepared.add(language);},
+    parserIdentity(language){
+      if(!prepared.has(language))throw Object.assign(new Error('UNPREPARED_LANGUAGE'),{code:'UNPREPARED_LANGUAGE'});
+      return experimentalIdentity(language);
+    },
+    extract:experimentalExtract,
+  };
+  const graph=createFileFactsPipeline({...paths,provider});
+  assert.equal((await graph.refresh()).counts.parsed,0);
+  await writeFile(join(paths.checkoutRoot,'introduced.php'),'<?php class Introduced {}');
+  const q=await graph.query('status');
+  assert.equal(q.state,'stale');
+  const updated=await graph.refresh();
+  assert.equal(updated.counts.parsed,1);
+  assert.equal((await graph.query('status')).state,'verified');
+});

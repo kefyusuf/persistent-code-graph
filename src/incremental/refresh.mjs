@@ -12,9 +12,13 @@ const invalid = (code,msg)=>Object.assign(new Error(`${code}: ${msg}`),{code});
  * - No hooks, watchers, background jobs, graph edge resolution, or grammar claims.
  * - Always hashes eligible files on each refresh (I/O != parsing).
  */
-export async function refreshFileFacts({checkoutRoot,indexRoot,parserIdentity,extract,beforeVerify}) {
+export async function refreshFileFacts({checkoutRoot,indexRoot,parserIdentity,extract,prepareForLanguages,beforeVerify}) {
  if(typeof parserIdentity!=='function'||typeof extract!=='function')throw invalid('INVALID_REFRESH','parserIdentity and extract callbacks required');
+ if(prepareForLanguages!==undefined && typeof prepareForLanguages!=='function')throw invalid('INVALID_REFRESH','invalid language preparation callback');
  const initial=await inventoryGitCheckout(checkoutRoot);
+ // Resolve any newly seen language before consulting the synchronous cache identity.
+ // Reuse this same inventory: no additional full source scan is necessary.
+ if(prepareForLanguages)await prepareForLanguages([...new Set(initial.files.map(f=>f.language))].sort());
  const store=new CodeGraphStore({indexRoot,checkoutRoot:initial.root});
  const prior=await store.read();
  const old=new Map(prior?.files.map(x=>[x.file,x])??[]);

@@ -53,3 +53,23 @@ test('isolated core with root dependencies parses PHP/TypeScript without any spi
   assert.equal(warm.counts.parsed,0);
   assert.equal(warm.counts.reused,2);
 });
+
+test('real grammar pipeline refreshes when a new supported language appears after opening',async t=>{
+  const temp=await mkdtemp(join(tmpdir(),'pcg-new-language-'));
+  t.after(()=>rm(temp,{recursive:true,force:true}));
+  const checkoutRoot=join(temp,'repo'),indexRoot=join(temp,'store');
+  await mkdir(checkoutRoot);
+  execFileSync('git',['init','-q'],{cwd:checkoutRoot});
+  await writeFile(join(checkoutRoot,'initial.php'),'<?php class Initial {}');
+  const graph=await openCodeGraph({checkoutRoot,indexRoot});
+  assert.equal((await graph.refresh()).counts.parsed,1);
+  await writeFile(join(checkoutRoot,'new.ts'),'interface NewType { name: string }');
+  await writeFile(join(checkoutRoot,'new.tsx'),'export function NewBadge(){return <span>Hi</span>}');
+  const incremental=await graph.refresh();
+  assert.equal(incremental.counts.parsed,2);
+  assert.equal(incremental.counts.reused,1);
+  const q=await graph.query('declarations',{name:'NewType'});
+  assert.equal(q.state,'verified');
+  assert.equal(q.results.length,1);
+  assert.equal((await graph.refresh()).counts.parsed,0);
+});
