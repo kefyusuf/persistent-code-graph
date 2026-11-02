@@ -53,3 +53,7 @@ const result = await graph.query('declarations', { name: 'Invoice' });
 ```
 
 The M1.6 offline suite passed **125/125** locally. A new real PHP/TypeScript/TSX integration test runs in the full CI gate; **its acceptance is pending on PR #2**. This is still a partial file-facts index, not a cross-file resolved semantic graph or a production-ready package. See [M1.6 decision](docs/M1.6-CANONICAL-API-BRIDGE.md).
+
+## M1.6.2 — Canonical storage (Draft PR #4)
+
+`src/storage/store.mjs` is now the sole implementation of persistent object/snapshot/head storage. `spikes/m1.4/src/store.mjs` remains a compatibility re-export, and historical refresh/query consumers import the canonical owner directly. Disk format, schema version, cache identity, immutable snapshot semantics, and public API are unchanged. Six RED→GREEN migration tests passed locally; all 134 offline tests passed. M1.6.2 full GitHub Actions acceptance passed: **150/150 tests** (134 offline, 16 real-grammar), with committed lockfiles verified ([run](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41355996826)). The stacked draft PR remains unmerged; this does not establish production readiness. See [M1.6.2 decision](docs/M1.6.2-CANONICAL-STORAGE-MIGRATION.md).

@@ -40,3 +40,12 @@
 - Extractor source-code SHA-256 changes because ownership moved; previously stored facts must be re-parsed rather than reused with an incompatible identity.
 - **Full parser acceptance: PASS, 144/144 tests**, including 128 offline and 16 real grammar/integration tests on [GitHub Actions run #41355128869](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41355128869).
 - Not a production-ready cross-file semantic code graph. No MCP, memory, daemon, additional languages or automatic merge.
+
+## M1.6.2 — Canonical Storage Migration (Draft PR #4)
+
+- [PR #4](https://github.com/kefyusuf/persistent-code-graph/pull/4) is stacked on PR #3 and remains draft; `main` is unchanged.
+- Canonical `CodeGraphStore`, canonical JSON serialization and manifest comparison moved unchanged to `src/storage/store.mjs`.
+- Historical store module re-exports the same symbols; refresh/query consumers import canonical storage.
+- RED: six tests initially failed because the canonical module did not exist; GREEN: 6/6 passed. The full local offline gate passed **134/134**.
+- Snapshot schema, content-addressed objects, checkout-specific heads, writer locks, parser identities, and public API were not changed.
+- **Full CI acceptance PASS: 150/150**, including 134 offline and 16 real-grammar/integration tests on [GitHub Actions run #41355996826](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41355996826). Both pinned lockfiles verified. PR #4 remains draft; no merge has been performed.
