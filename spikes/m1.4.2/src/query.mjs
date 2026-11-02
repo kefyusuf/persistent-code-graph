@@ -4,7 +4,7 @@
  * Whole-file source bytes are rehashed twice; no source code is returned.
  */
 import { CodeGraphStore } from '../../../src/storage/store.mjs';
-import { inventoryGitCheckout } from '../../m1.4.1/src/inventory.mjs';
+import { inventoryGitCheckout } from '../../../src/incremental/inventory.mjs';
 
 const err = (code, message) => Object.assign(new Error(`${code}: ${message}`), { code });
 const compareUtf8=(a,b)=>Buffer.compare(Buffer.from(a,'utf8'),Buffer.from(b,'utf8'));

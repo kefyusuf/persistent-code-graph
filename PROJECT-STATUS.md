@@ -1,51 +1,33 @@
 # Persistent Code Graph — Project Status
 
-**As of 2026-11-02.** GitHub: https://github.com/kefyusuf/persistent-code-graph
+Updated: 2026-11-02. This status reflects the M1.6.3 implementation commit; check the latest PR head and CI before merge.
 
-| Milestone | State | Evidence |
-|---|---|---|
-| M0 | Design recorded | Product definition and architecture constraints |
-| M1.0–M1.1 | Design recorded | Language adapter and normalized facts models |
-| M1.2 | Independent experiment accepted | Temporary parser tests: 11/11 |
-| M1.3 | **Parser compatibility gate PASSED** | Offline contracts 13/13; real Tree-sitter 12/12 in GitHub Actions |
-| M1.4 | Independent experiment accepted | Persistent snapshot store: 18/18 |
-| M1.4.1 | Independent experiment accepted | Git inventory and incremental reuse: 21/21 |
-| M1.4.2 | Independent experiment accepted | Verified bounded queries: 26/26 |
-| M1.5 | **Parser integration gate PASSED** | Offline pipeline 12/12; real grammar integration 3/3 in GitHub Actions |
-| M1.5.1 | Independent experiment accepted | Verified batch query: 14/14 |
-| M1.5.2 | **CI acceptance PASS** | Gate runner 6/6; offline + grammar tests **136/136**; both lockfiles committed |
+| Milestone | Evidence / state |
+|---|---|
+| M0–M1.1 | Documented scope, invariants, language adapter, and file-facts contracts |
+| M1.2 | Temporary-parser feasibility: 11 offline tests |
+| M1.3 | Real Tree-sitter PHP/TypeScript/TSX grammar gate passed in GitHub Actions |
+| M1.4–M1.4.2 | Experimental persistent store, working-tree inventory, and verified bounded queries |
+| M1.5–M1.5.2 | Parser/store integration and fail-closed acceptance runner with pinned lockfiles |
+| M1.6 | Canonical `src/core.mjs` and `src/index.mjs`; API gate passed |
+| M1.6.1 | Canonical `src/parser/`; 144 tests passed in CI |
+| M1.6.2 | Canonical `src/storage/`; 150 tests passed in CI |
+| M1.6.3 | Canonical `src/incremental/`; **156/156 tests passed** on implementation commit `4390cdbdd30f4b03adea402635b2b4dafe127329` |
 
-**Acceptance evidence:** [GitHub Actions successful run #3](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41352082086), Node.js 22 / Ubuntu runner. CI passed with npm `ci` for both locked parsers. The current repository is an experimental baseline, not a production code intelligence service.
+## Acceptance and PR chain
 
-**Git flow:** Draft [PR #1](https://github.com/kefyusuf/persistent-code-graph/pull/1) on `chore/m1.5.2-parser-acceptance-baseline`. **Do not merge automatically.** Review and follow-up design are required.
+- M1.6.3 offline gates: 140/140 passed. Real grammar/integration gates: 16/16 passed. The complete acceptance runner reported `PASS` on [GitHub Actions run 41406157939](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41406157939).
+- Branch: `refactor/m1.6.3-canonical-incremental`; Draft [PR #5](https://github.com/kefyusuf/persistent-code-graph/pull/5) based on the M1.6.2 branch.
+- PR #1–#5 are stacked Draft pull requests. **Do not merge** until review, ordered branch integration, and CI on the final head are complete. `main` remains unchanged by the M1.6.x work.
+- The local offline runner reports `OFFLINE_ONLY`, never full parser acceptance.
 
-**Still unverified:** Windows portability, high-load/concurrent index behavior, broad language semantics and correctness beyond fixtures, end-to-end agent token savings, and production hardening.
+## Scope / remaining risks
 
-**Out of scope:** MCP, cloud, LLM calls, embedding/RAG, multi-agent memory, dashboard, and automatic background workers.
+- This remains a syntax-only file-facts index with partial language coverage, not a resolved cross-file semantic code graph.
+- Every refresh rehashes eligible files; verified read queries rehash twice. There are no measured production-scale token savings.
+- Crash recovery for writer locks, Windows crash durability, and concurrent filesystem races remain unproven.
+- Out of scope: MCP, agent memory, LLM calls, embedding/RAG, dashboard, cloud, and automatic background processes.
 
-## M1.6 — Canonical API bridge (Draft PR #2)
+## Next narrow milestone
 
-- [PR #2](https://github.com/kefyusuf/persistent-code-graph/pull/2) is stacked on the already CI-verified [PR #1](https://github.com/kefyusuf/persistent-code-graph/pull/1), not on `main`.
-- `src/core.mjs` now owns the existing orchestration; the M1.5 import re-exports it to preserve prior tests.
-- Public `src/index.mjs` exposes only the real Tree-sitter opener `openCodeGraph`.
-- Local offline verification: **125/125 passed**. The real parser entry-point test passed on [GitHub Actions run #41353335458](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41353335458).
-- No semantic cross-file edge resolution, MCP, background service, LLM, RAG or cloud layer was added.
-- The `spikes/` dependencies are intentionally transitional. Production packaging and Windows support remain unverified.
-
-## M1.6.1 — Canonical Parser Module Migration (Draft PR #3)
-
-- [PR #3](https://github.com/kefyusuf/persistent-code-graph/pull/3) is stacked on PR #2 and remains draft; `main` is unchanged.
-- Canonical parser ownership: `src/parser/{contract,runtime,provider}.mjs`, with re-export-only legacy paths.
-- The parser dependency installation and lockfiles stay under `spikes/m1.3` until a distinct packaging milestone.
-- Extractor source-code SHA-256 changes because ownership moved; previously stored facts must be re-parsed rather than reused with an incompatible identity.
-- **Full parser acceptance: PASS, 144/144 tests**, including 128 offline and 16 real grammar/integration tests on [GitHub Actions run #41355128869](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41355128869).
-- Not a production-ready cross-file semantic code graph. No MCP, memory, daemon, additional languages or automatic merge.
-
-## M1.6.2 — Canonical Storage Migration (Draft PR #4)
-
-- [PR #4](https://github.com/kefyusuf/persistent-code-graph/pull/4) is stacked on PR #3 and remains draft; `main` is unchanged.
-- Canonical `CodeGraphStore`, canonical JSON serialization and manifest comparison moved unchanged to `src/storage/store.mjs`.
-- Historical store module re-exports the same symbols; refresh/query consumers import canonical storage.
-- RED: six tests initially failed because the canonical module did not exist; GREEN: 6/6 passed. The full local offline gate passed **134/134**.
-- Snapshot schema, content-addressed objects, checkout-specific heads, writer locks, parser identities, and public API were not changed.
-- **Full CI acceptance PASS: 150/150**, including 134 offline and 16 real-grammar/integration tests on [GitHub Actions run #41355996826](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41355996826). Both pinned lockfiles verified. PR #4 remains draft; no merge has been performed.
+M1.6.4: move the existing bounded verified query implementation to `src/query/`, preserving fail-closed stale/unknown behavior and historical import compatibility; tests → PR → full CI. No feature expansion.

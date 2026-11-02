@@ -1,7 +1,7 @@
 /** Real grammar provider: no fallback to the M1.2 temporary parser.
  * This module is not a claim that M1.3 has passed: only execution of the pinned
  * grammars and integration tests can establish compatibility. */
-import { inventoryGitCheckout } from '../../spikes/m1.4.1/src/inventory.mjs';
+import { inventoryGitCheckout } from '../incremental/inventory.mjs';
 import { getRealParserIdentity, extractWithRealGrammar } from './runtime.mjs';
 
 const problem=(code,message)=>Object.assign(new Error(`${code}: ${message}`),{code});

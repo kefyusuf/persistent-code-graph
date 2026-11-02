@@ -37,10 +37,12 @@ test('old store entrypoint is a re-export-only shim, with no second storage owne
   assert.match(impl,/export class CodeGraphStore/);
 });
 
-test('refresh and query use canonical storage directly; public core remains unchanged',()=>{
-  for(const name of ['m1.4.1/src/refresh.mjs','m1.4.2/src/query.mjs']){
-    const code=readFileSync(new URL(`../spikes/${name}`,import.meta.url),'utf8');
-    assert.match(code,/from '\.\.\/\.\.\/\.\.\/src\/storage\/store\.mjs'/);
+test('canonical refresh and query use canonical storage directly; no old storage module imports',()=>{
+  for (const name of ['src/incremental/refresh.mjs','spikes/m1.4.2/src/query.mjs']){
+    const code=readFileSync(new URL(`../${name}`,import.meta.url),'utf8');
+    assert.match(code,name.startsWith('src/')
+      ? /from '\.\.\/storage\/store\.mjs'/
+      : /from '\.\.\/\.\.\/\.\.\/src\/storage\/store\.mjs'/);
     assert.doesNotMatch(code,/from '\.\.\/\.\.\/m1\.4\/src\/store\.mjs'/);
   }
 });
