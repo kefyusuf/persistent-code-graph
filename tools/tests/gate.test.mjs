@@ -38,3 +38,29 @@ test('TAP parser rejects missing or impossible totals',()=>{
  assert.throws(()=>tapSummary('# tests 3\n# pass 3'),/MISSING_TAP_SUMMARY/);
  assert.throws(()=>tapSummary('# tests 3\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0'),/INCONSISTENT_TAP_SUMMARY/);
 });
+
+test('full acceptance refuses a repeated gate substituted for a real grammar gate',()=>{
+ const r=gatePlan('full').map(x=>good(x.id));
+ r[r.length-1]={...good(r[0].id)};
+ assert.equal(acceptanceStatus('full',r),'BLOCKED');
+});
+
+test('full acceptance refuses an unknown gate in place of an expected gate',()=>{
+ const r=gatePlan('full').map(x=>good(x.id));
+ r[r.length-1]={...good('not-an-acceptance-gate')};
+ assert.equal(acceptanceStatus('full',r),'BLOCKED');
+});
+
+test('acceptance refuses empty or inconsistent passing evidence',()=>{
+ const expected=gatePlan('full').map(x=>good(x.id));
+ assert.equal(acceptanceStatus('full',expected.map(x=>({...x,tests:0,pass:0}))),'BLOCKED');
+ assert.equal(acceptanceStatus('full',expected.map(x=>({...x,tests:2,pass:1}))),'BLOCKED');
+ assert.equal(acceptanceStatus('full',expected.map(x=>({...x,tests:1,pass:1,fail:1}))),'FAIL');
+});
+
+test('offline acceptance also validates exact gate identities and counts',()=>{
+ const expected=gatePlan('offline').map(x=>good(x.id));
+ assert.equal(acceptanceStatus('offline',expected),'OFFLINE_ONLY');
+ const wrong=expected.map(x=>({...x})); wrong[0].id='another-gate';
+ assert.equal(acceptanceStatus('offline',wrong),'BLOCKED');
+});
