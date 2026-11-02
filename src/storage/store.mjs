@@ -62,6 +62,31 @@ function isAtOrWithin(parent,child){
  return rel==='' || (rel!=='..' && !rel.startsWith('..'+sep) && !isAbsolute(rel));
 }
 
+/**
+ * Reject pre-existing managed-directory links before reads or writes. The root
+ * was canonicalized at construction; recheck it because a previously absent
+ * directory may have been replaced by a symlink in the meantime.
+ *
+ * This is a pre-operation safeguard, not an atomic defence against concurrent
+ * directory swaps (TOCTOU).
+ */
+function assertManagedStorePaths(indexRoot, checkoutRoot) {
+  const physicalRoot=prospectivePhysicalPath(indexRoot);
+  if(physicalRoot!==indexRoot || isAtOrWithin(checkoutRoot,physicalRoot))
+    throw error('INVALID_STORE','index root changed physical location');
+  for(const name of ['heads','objects','snapshots','locks']) {
+    const managed=join(indexRoot,name);
+    let entry;
+    try{entry=lstatSync(managed);}
+    catch(e){
+      if(e.code==='ENOENT')continue;
+      throw error('INVALID_STORE',`cannot inspect managed directory ${name}: ${e.code}`);
+    }
+    if(entry.isSymbolicLink() || !entry.isDirectory())
+      throw error('INVALID_STORE',`managed directory ${name} must be a real directory`);
+  }
+}
+
 function validatePath(path) {
  if(typeof path!=='string'||path.length===0||path.includes('\\')||path.includes('\0')||isAbsolute(path)||/^[A-Za-z]:/.test(path))
    throw error('INVALID_PATH',String(path));
@@ -170,6 +195,7 @@ export class CodeGraphStore {
   return s;
  }
  async read(){
+  assertManagedStorePaths(this.indexRoot,this.checkoutRoot);
   const h=await this.#head();if(!h)return null;
   const snapshot=await this.#loadSnapshot(h.snapshotId);
   const files=[];
@@ -189,6 +215,7 @@ export class CodeGraphStore {
   if(!Array.isArray(files))throw error('INVALID_MANIFEST','files array required');
   const ready=files.map(validateFacts).sort((a,b)=>Buffer.compare(Buffer.from(a.file,'utf8'),Buffer.from(b.file,'utf8')));
   normalizeManifest(ready); // validate uniqueness and stable ordering
+  assertManagedStorePaths(this.indexRoot,this.checkoutRoot);
   await mkdir(join(this.indexRoot,'locks'),{recursive:true});
   try{await mkdir(this.lockPath);}catch(e){
    if(e.code==='EEXIST')throw error('WRITER_LOCKED',`active or orphaned writer lock at ${this.lockPath}`);
