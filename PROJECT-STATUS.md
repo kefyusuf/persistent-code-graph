@@ -14,7 +14,7 @@
 | M1.6.2 | Storage migration PR #4 | `src/storage/` ownership and shims |
 | M1.6.3 | Incremental migration PR #5 | `src/incremental/` ownership and shims; previous CI 156/156 |
 | M1.6.4 | Previous GitHub CI passed | Canonical `src/query/`, 163/163 on commit `bf2917ad` |
-| M1.6.5 | **Local offline passed / GitHub CI pending** | Root parser dependencies, production-path independence, isolated-real-grammar test |
+| M1.6.5 | **GitHub CI passed on implementation commit** | Root parser dependencies, independent runtime; 168/168 passed |
 
 ## M1.6.4 evidence and release gate
 
@@ -32,7 +32,7 @@ No cloud hosting, LLM/vector/RAG, MCP server, agent memory, daemon, dashboard, a
 
 - RED: three new contract tests, two failed (missing root dependencies and residual spike paths); GREEN: all three passed. Local offline acceptance: **151/151**, `OFFLINE_ONLY`.
 - Canonical runtime resolves only from root `package.json` and `node_modules`; root `package-lock.json` pins exact package versions and integrity. Legacy M1.3 fixture installation is retained only for its own tests.
-- CI must install root pinned dependencies and execute a second real-grammar scenario from a copied `src/` directory with no `spikes/` directory. Expected: **151 offline + 17 real = 168 total**, no skips. Until verified on the final commit, **do not claim acceptance**.
+- GitHub CI installed pinned root dependencies and executed a real-grammar scenario from an isolated `src/` directory without `spikes/`: **151 offline + 17 real = 168/168** with zero skips on commit `d2519292`. Verified run: https://github.com/kefyusuf/persistent-code-graph/actions/runs/41424973376. A documentation-only follow-up commit requires its own final CI check.
 - Scope unchanged: no new language, semantic graph, MCP, daemon, embeddings, or agent memory. Existing draft PR stack remains unmerged.
 
 - Initial PR #7 CI attempt failed because a stale workflow copy did not install the canonical root dependencies. Corrected workflow and regression assertion are part of the follow-up commit; final CI verification remains required.
