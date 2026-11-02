@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { OFFLINE_GATES, REAL_GRAMMAR_GATES, gatePlan, tapSummary, acceptanceStatus } from '../gate.mjs';
 const good=id=>({id,status:'passed',tests:1,pass:1,fail:0,skipped:0,cancelled:0});
 test('offline and real grammar gates are explicitly separate',()=>{
- assert.equal(OFFLINE_GATES.length,8);
- assert.equal(REAL_GRAMMAR_GATES.length,2);
- assert.equal(gatePlan('full').length,10);
- assert.equal(gatePlan('offline').length,8);
+ assert.equal(OFFLINE_GATES.length,9);
+ assert.equal(REAL_GRAMMAR_GATES.length,3);
+ assert.equal(gatePlan('full').length,12);
+ assert.equal(gatePlan('offline').length,9);
  assert.throws(()=>gatePlan('garbage'),/INVALID_GATE_MODE/);
 });
 test('a clean offline result is never a real-parser acceptance',()=>{
@@ -20,7 +20,7 @@ test('missing dependencies force blocked status in full mode',()=>{
 });
 test('skipped tests cannot silently pass full acceptance',()=>{
  const r=gatePlan('full').map(x=>good(x.id));
- r[8].skipped=1;
+ r[OFFLINE_GATES.length].skipped=1;
  assert.equal(acceptanceStatus('full',r),'FAIL');
 });
 test('real-parser gate requires all suites with no failures',()=>{

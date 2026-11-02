@@ -39,3 +39,17 @@ Do **not** interpret a green real grammar test on its own as production readines
 No hosted service, automatic background daemon, RAG, embeddings, remote memory, AI-generated summaries, dashboard, or MCP server in this milestone. Do not use test stubs as a production parser fallback.
 
 See [M1.5.2 decision record](docs/M1.5.2-ACCEPTANCE-RUNNER.md) and [project status](PROJECT-STATUS.md).
+
+## M1.6 — Canonical orchestration API (draft PR #2)
+
+The single orchestration owner is `src/core.mjs`; the M1.5 import is a backward-compatible re-export. `src/index.mjs` exports `openCodeGraph`, which requires real, locally installed Tree-sitter grammar assets. There is **no** experimental parser fallback in the public entry point. Low-level parser, persistence, inventory and query modules remain under their gated `spikes/` paths for this first consolidation step.
+
+```js
+import { openCodeGraph } from './src/index.mjs';
+const graph = await openCodeGraph({ checkoutRoot: '/path/to/git-repo', indexRoot: '/path/outside/checkout/store' });
+await graph.refresh();
+const result = await graph.query('declarations', { name: 'Invoice' });
+// Check result.state before using results as current facts.
+```
+
+The M1.6 offline suite passed **125/125** locally. A new real PHP/TypeScript/TSX integration test runs in the full CI gate; **its acceptance is pending on PR #2**. This is still a partial file-facts index, not a cross-file resolved semantic graph or a production-ready package. See [M1.6 decision](docs/M1.6-CANONICAL-API-BRIDGE.md).

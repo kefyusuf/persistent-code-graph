@@ -22,3 +22,12 @@
 **Still unverified:** Windows portability, high-load/concurrent index behavior, broad language semantics and correctness beyond fixtures, end-to-end agent token savings, and production hardening.
 
 **Out of scope:** MCP, cloud, LLM calls, embedding/RAG, multi-agent memory, dashboard, and automatic background workers.
+
+## M1.6 — Canonical API bridge (Draft PR #2)
+
+- [PR #2](https://github.com/kefyusuf/persistent-code-graph/pull/2) is stacked on the already CI-verified [PR #1](https://github.com/kefyusuf/persistent-code-graph/pull/1), not on `main`.
+- `src/core.mjs` now owns the existing orchestration; the M1.5 import re-exports it to preserve prior tests.
+- Public `src/index.mjs` exposes only the real Tree-sitter opener `openCodeGraph`.
+- Local offline verification: **125/125 passed**. A new real parser entry-point test is pending CI evidence on PR #2.
+- No semantic cross-file edge resolution, MCP, background service, LLM, RAG or cloud layer was added.
+- The `spikes/` dependencies are intentionally transitional. Production packaging and Windows support remain unverified.
