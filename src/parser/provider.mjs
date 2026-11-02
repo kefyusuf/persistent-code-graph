@@ -10,14 +10,21 @@ export async function prepareTreeSitterProvider(checkoutRoot){
   const inventory=await inventoryGitCheckout(checkoutRoot);
   const languages=[...new Set(inventory.files.map(f=>f.language))].sort();
   const identities=new Map();
-  // Load every grammar referenced by current source BEFORE any index mutation.
-  for(const language of languages){
-    if(!['php','typescript','tsx'].includes(language))throw problem('UNSUPPORTED_PARSER',language);
-    const identity=await getRealParserIdentity(language);
-    identities.set(language,identity.cacheIdentity);
+  // The checkout can gain a new supported language after openCodeGraph().
+  // Prepare identities for each refresh's *current* inventory, not only startup files.
+  async function prepareLanguages(languages){
+    for(const language of [...new Set(languages)].sort()){
+      if(!['php','typescript','tsx'].includes(language))throw problem('UNSUPPORTED_PARSER',language);
+      if(!identities.has(language)){
+        const identity=await getRealParserIdentity(language);
+        identities.set(language,identity.cacheIdentity);
+      }
+    }
   }
+  await prepareLanguages(languages);
   return Object.freeze({
     provenance:'real-tree-sitter-unvalidated',
+    prepareLanguages,
     parserIdentity(language){
       const id=identities.get(language);
       if(!id)throw problem('UNPREPARED_LANGUAGE',language);

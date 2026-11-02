@@ -13,7 +13,8 @@ export function createFileFactsPipeline({checkoutRoot,indexRoot,provider}) {
  if(typeof checkoutRoot!=='string'||!checkoutRoot||typeof indexRoot!=='string'||!indexRoot)
    throw fail('INVALID_PIPELINE','checkoutRoot and indexRoot required');
  if(!provider || !PROVIDER_TYPES.has(provider.provenance) ||
-    typeof provider.extract!=='function' || typeof provider.parserIdentity!=='function')
+    typeof provider.extract!=='function' || typeof provider.parserIdentity!=='function' ||
+    (provider.prepareLanguages!==undefined && typeof provider.prepareLanguages!=='function'))
    throw fail('INVALID_PIPELINE','explicit provider with verifiable provenance required');
  const checkout=resolve(checkoutRoot),index=resolve(indexRoot);
  const label=provider.provenance;
@@ -22,7 +23,8 @@ export function createFileFactsPipeline({checkoutRoot,indexRoot,provider}) {
    async refresh(options={}){
      if(options.beforeVerify!==undefined&&typeof options.beforeVerify!=='function')throw fail('INVALID_PIPELINE','invalid beforeVerify');
      const r=await refreshFileFacts({checkoutRoot:checkout,indexRoot:index,
-       parserIdentity:provider.parserIdentity,extract:provider.extract,beforeVerify:options.beforeVerify});
+       parserIdentity:provider.parserIdentity,extract:provider.extract,
+       prepareForLanguages:provider.prepareLanguages,beforeVerify:options.beforeVerify});
      return {...r,parserProvenance:label,semanticGraph:false};
    },
    async query(operation,selectors={}){
