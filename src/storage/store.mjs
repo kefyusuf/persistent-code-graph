@@ -171,8 +171,12 @@ export class CodeGraphStore {
   if(!indexRoot ||!checkoutRoot)throw error('INVALID_STORE','indexRoot and checkoutRoot required');
   this.checkoutRoot=realpathSync(checkoutRoot);
   this.indexRoot=prospectivePhysicalPath(indexRoot);
-  if(isAtOrWithin(this.checkoutRoot,this.indexRoot))
-   throw error('INVALID_STORE','index root must be outside source checkout for M1.4');
+  // An index root may be a checkout's parent, but no managed store
+  // directory may coincide with or be nested within source files.
+  if(isAtOrWithin(this.checkoutRoot,this.indexRoot) ||
+     ['heads','objects','snapshots','locks'].some(name =>
+       isAtOrWithin(this.checkoutRoot,join(this.indexRoot,name))))
+   throw error('INVALID_STORE','index root and managed storage directories must stay outside checkout');
   this.checkoutKey=hash(this.checkoutRoot);
   this.headPath=join(this.indexRoot,'heads',`${this.checkoutKey}.json`);
   this.objectsDir=join(this.indexRoot,'objects');
