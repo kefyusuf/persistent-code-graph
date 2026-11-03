@@ -35,7 +35,7 @@ Known, unresolved risks: adversarial symlink swaps between path checks and I/O (
 ## Next bounded work
 
 1. Review [Draft PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15) and its exact-head CI evidence. Do **not** merge solely because CI passed.
-2. Reconcile the still-open [span-performance issue #12](https://github.com/kefyusuf/persistent-code-graph/issues/12) against merged M1.6.12 acceptance before changing its issue state.
+2. [Span-performance issue #12](https://github.com/kefyusuf/persistent-code-graph/issues/12) was closed as completed after PR #14's review, merge, and successful post-merge `main` CI. Repository-scale latency and allocation evidence remain unproven and need a separate scoped investigation.
 3. Keep this file and the root README synchronized after each **actual merge**. Historical technical notes are intentionally not rewritten to disguise their prior Draft/pending evidence state.
 
 **Out of scope:** hosted service, cloud indexer, MCP server, agent memory, embeddings/RAG, background daemon, dashboard, new languages or semantic cross-file inference without a separately accepted milestone.
