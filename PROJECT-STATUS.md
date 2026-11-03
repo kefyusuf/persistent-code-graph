@@ -1,38 +1,41 @@
 # Persistent Code Graph — Project Status
 
-**As of 2026-11-02 — M1.6.5 standalone runtime candidate; not production-ready.**
+**As of 2026-11-03. Experimental; not production-ready.**
 
-| Milestone | State | Evidence |
-|---|---|---|
-| M0–M1.1 | Design recorded | Scope, constraints, universal file-facts model |
-| M1.2 | Prototype complete | Temporary parser contract tests |
-| M1.3 / M1.5 | Real parser gate confirmed by previous CI | PHP/TypeScript/TSX Tree-sitter test suites; limited fixtures |
-| M1.4–M1.5.1 | Independent prototypes | Persisted snapshots, incremental refresh, verified single/batch queries |
-| M1.5.2 | Repo baseline PR #1 | Reproducible acceptance runner / lockfiles |
-| M1.6 | Canonical API PR #2 | Public `openCodeGraph()` and regression gates |
-| M1.6.1 | Parser migration PR #3 | `src/parser/` ownership and shims |
-| M1.6.2 | Storage migration PR #4 | `src/storage/` ownership and shims |
-| M1.6.3 | Incremental migration PR #5 | `src/incremental/` ownership and shims; previous CI 156/156 |
-| M1.6.4 | Previous GitHub CI passed | Canonical `src/query/`, 163/163 on commit `bf2917ad` |
-| M1.6.5 | **GitHub CI passed on implementation commit** | Root parser dependencies, independent runtime; 168/168 passed |
+- **Integrated `main` head:** `217a46052c7297f1ab6bfa190a81503b8c3ea5b9` (through M1.6.12).
+- **Post-integration CI:** [GitHub Actions run 41514272171](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41514272171), `completed / success`, on that exact `main` head.
+- **Pending separate change:** [Draft PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15) (M1.6.13 managed storage path symlink guard); not part of `main`. Its [head-specific full CI](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41523044322) passed; independent code review and merge authorization remain separate.
 
-## M1.6.4 evidence and release gate
+## Integrated milestones
 
-- RED: module-resolution failure for the deliberately missing canonical query module. GREEN: seven newly added tests pass.
-- Local offline: **147/147** tests, all 13 suites passed. This is `OFFLINE_ONLY`, not proof of real-grammar acceptance.
-- Real parser gate: **16** tests in three real-grammar suites must run against this branch on GitHub Actions, not skipped. Do not claim **163/163** until the final commit's CI is verified.
-- Query implementation moved unchanged. Old spike paths are re-export-only shims; no schema, cache identity or semantic graph changes.
-- The pull-request stack is deliberately left unmerged pending review and evidence.
+| Milestone | Current status | Implementation/evidence |
+| --- | --- | --- |
+| M0–M1.1 | Design documented | Product boundaries, parser abstractions, universal file-facts model |
+| M1.2–M1.3 | Parser feasibility + real grammar gate integrated | PHP/TypeScript/TSX parser tests; temporary parser remains a test-only spike |
+| M1.4–M1.5.1 | Experimental store/incremental/verified-query prototypes integrated | Immutable hashed snapshots, explicit refresh, bounded read-only queries |
+| M1.5.2 | Merged — PR #1 | Pinned dependencies, fail-closed offline/full acceptance CI |
+| M1.6–M1.6.4 | Merged — PRs #2–#6 | Canonical `src/` entrypoint, parser, storage, refresh/inventory and queries; compatibility re-exports |
+| M1.6.5 | Merged — PR #7 | Root-pinned Tree-sitter dependencies, isolated runtime without `spikes/` |
+| M1.6.6 | Merged — PR #8 | Late-arriving supported language identities handled during refresh |
+| M1.6.7 | Merged — PR #9 | Index-root symlink-ancestor path guard |
+| M1.6.8 | Integration readiness record | Review-time assessment, not a runtime feature |
+| M1.6.9 | Merged — PR #10 | Acceptance report suite-ID/count integrity checks |
+| M1.6.10 | Merged — PR #11 | Query selector scope boundary; acceptance report output destination guard |
+| M1.6.11 | Merged — PR #13 | Documentation/contract terminology alignment |
+| M1.6.12 | Merged — PR #14 | Indexed source coordinates for repeated Tree-sitter fact extraction |
 
-## Scope boundaries
+## Verified acceptance versus limitations
 
-No cloud hosting, LLM/vector/RAG, MCP server, agent memory, daemon, dashboard, automatic background indexing or cross-file call-target inference. Production portability and token savings remain unproven.
+The final M1.6.12 PR head `7d96e674` passed **191/191** reported full CI tests (171 offline and 20 real parser/integration) in [run 41456461051](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41456461051). The later integrated `main` merge head has a separate successful [full workflow](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41514272171). These are distinct commits and both are cited separately. Successful tests establish only the exercised contracts, not broad production safety.
 
-## M1.6.5 evidence and release gate
+The current API operates on **file-local syntax facts**. `verified` means the eligible source working tree matched the indexed snapshot at the two checks performed within that query, **not** continuous freshness or completeness. Missing source observations do not establish absence. No resolved cross-file call targets or complete semantic code graph exist.
 
-- RED: three new contract tests, two failed (missing root dependencies and residual spike paths); GREEN: all three passed. Local offline acceptance: **151/151**, `OFFLINE_ONLY`.
-- Canonical runtime resolves only from root `package.json` and `node_modules`; root `package-lock.json` pins exact package versions and integrity. Legacy M1.3 fixture installation is retained only for its own tests.
-- GitHub CI installed pinned root dependencies and executed a real-grammar scenario from an isolated `src/` directory without `spikes/`: **151 offline + 17 real = 168/168** with zero skips on commit `d2519292`. Verified run: https://github.com/kefyusuf/persistent-code-graph/actions/runs/41424973376. A documentation-only follow-up commit requires its own final CI check.
-- Scope unchanged: no new language, semantic graph, MCP, daemon, embeddings, or agent memory. Existing draft PR stack remains unmerged.
+Known, unresolved risks: adversarial symlink swaps between path checks and I/O (TOCTOU); Windows locking/rename and crash durability; unproven large-repository latency and token savings; partial parser/relationship coverage; no continuous source freshness guarantee.
 
-- Initial PR #7 CI attempt failed because a stale workflow copy did not install the canonical root dependencies. Corrected workflow and regression assertion are part of the follow-up commit; final CI verification remains required.
+## Next bounded work
+
+1. Review [Draft PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15) and its exact-head CI evidence. Do **not** merge solely because CI passed.
+2. Reconcile the still-open [span-performance issue #12](https://github.com/kefyusuf/persistent-code-graph/issues/12) against merged M1.6.12 acceptance before changing its issue state.
+3. Keep this file and the root README synchronized after each **actual merge**. Historical technical notes are intentionally not rewritten to disguise their prior Draft/pending evidence state.
+
+**Out of scope:** hosted service, cloud indexer, MCP server, agent memory, embeddings/RAG, background daemon, dashboard, new languages or semantic cross-file inference without a separately accepted milestone.
