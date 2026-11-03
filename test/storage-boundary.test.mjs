@@ -90,3 +90,25 @@ test('rejects an indexRoot replaced by a checkout symlink after store constructi
   );
   assert.deepEqual(await readdir(checkoutRoot),[]);
 });
+
+for (const managedName of ['objects','snapshots','heads','locks']) {
+  test(`index root parent is rejected when managed ${managedName}/ equals checkout`, async t => {
+    const {root} = await sandbox(t);
+    const checkoutRoot=join(root,managedName);
+    await mkdir(checkoutRoot);
+    // All other managed subdirectories are siblings. This specific one is the checkout.
+    assert.throws(
+      () => new CodeGraphStore({checkoutRoot,indexRoot:root}),
+      {code:'INVALID_STORE'},
+    );
+    assert.deepEqual(await readdir(checkoutRoot),[]);
+  });
+}
+
+test('a parent indexRoot remains usable when every managed subdirectory is outside checkout', async t => {
+  const {root,checkoutRoot}=await sandbox(t);
+  const store=new CodeGraphStore({checkoutRoot,indexRoot:root});
+  const result=await store.publish({expectedHead:null,files:[minimalFacts()]});
+  assert.equal((await store.read()).snapshotId,result.snapshotId);
+  assert.deepEqual(await readdir(checkoutRoot),[]);
+});
