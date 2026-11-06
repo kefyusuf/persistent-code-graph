@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, symlink, rm, readdir } from 'node:fs/promises';
+import { mkdtemp, mkdir, symlink, rm, readdir, rename } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CodeGraphStore } from '../src/storage/store.mjs';
@@ -110,5 +110,45 @@ test('a parent indexRoot remains usable when every managed subdirectory is outsi
   const store=new CodeGraphStore({checkoutRoot,indexRoot:root});
   const result=await store.publish({expectedHead:null,files:[minimalFacts()]});
   assert.equal((await store.read()).snapshotId,result.snapshotId);
+  assert.deepEqual(await readdir(checkoutRoot),[]);
+});
+
+for (const area of ['heads','snapshots','objects']) {
+  test(`read rejects a ${area}/ JSON leaf symlink, even when its target has valid bytes`, async t => {
+    const {root,checkoutRoot}=await sandbox(t);
+    const indexRoot=join(root,'external-index');
+    const store=new CodeGraphStore({checkoutRoot,indexRoot});
+    await store.publish({expectedHead:null,files:[minimalFacts()]});
+    const [name]=await readdir(join(indexRoot,area));
+    const leaf=join(indexRoot,area,name);
+    const backup=join(root,`${area}-saved.json`);
+    await rename(leaf,backup);
+    await symlink(backup,leaf);
+    await assert.rejects(store.read(),{code:'INTEGRITY_ERROR'});
+  });
+}
+
+test('read distinguishes an absent head from a dangling head-file symlink', async t => {
+  const {root,checkoutRoot}=await sandbox(t);
+  const indexRoot=join(root,'external-index');
+  const store=new CodeGraphStore({checkoutRoot,indexRoot});
+  assert.equal(await store.read(),null);
+  await mkdir(join(indexRoot,'heads'),{recursive:true});
+  await symlink(join(root,'nonexistent-head'),store.headPath);
+  await assert.rejects(store.read(),{code:'INTEGRITY_ERROR'});
+});
+
+test('publication rejects an alias of a valid head record without replacing it', async t => {
+  const {root,checkoutRoot}=await sandbox(t);
+  const indexRoot=join(root,'external-index');
+  const store=new CodeGraphStore({checkoutRoot,indexRoot});
+  const first=await store.publish({expectedHead:null,files:[minimalFacts()]});
+  const backup=join(root,'original-head.json');
+  await rename(store.headPath,backup);
+  await symlink(backup,store.headPath);
+  await assert.rejects(
+    store.publish({expectedHead:first.snapshotId,files:[minimalFacts()]}),
+    {code:'INTEGRITY_ERROR'},
+  );
   assert.deepEqual(await readdir(checkoutRoot),[]);
 });
