@@ -128,6 +128,26 @@ for (const area of ['heads','snapshots','objects']) {
   });
 }
 
+
+for (const area of ['objects','snapshots']) {
+  test(`publication rejects an existing ${area}/ JSON leaf symlink without following it`, async t => {
+    const {root,checkoutRoot}=await sandbox(t);
+    const indexRoot=join(root,'external-index');
+    const store=new CodeGraphStore({checkoutRoot,indexRoot});
+    const first=await store.publish({expectedHead:null,files:[minimalFacts()]});
+    const [name]=await readdir(join(indexRoot,area));
+    const leaf=join(indexRoot,area,name);
+    const backup=join(root,`${area}-original.json`);
+    await rename(leaf,backup);
+    await symlink(backup,leaf);
+    await assert.rejects(
+      store.publish({expectedHead:first.snapshotId,files:[minimalFacts()]}),
+      {code:'INTEGRITY_ERROR'},
+    );
+    assert.deepEqual(await readdir(checkoutRoot),[]);
+  });
+}
+
 test('read distinguishes an absent head from a dangling head-file symlink', async t => {
   const {root,checkoutRoot}=await sandbox(t);
   const indexRoot=join(root,'external-index');
