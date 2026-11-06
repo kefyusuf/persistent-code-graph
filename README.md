@@ -9,6 +9,11 @@ A deliberately small, offline-first code indexing project. **Not production-read
 - M1.3: real Tree-sitter grammar gate verified on GitHub CI (not production-semantic-graph acceptance).
 - M1.4–M1.5.1: tested experimental store, file inventory, refresh and bounded read-only queries; not a complete semantic cross-file graph.
 - M1.5.2: single command and CI workflow for fail-closed acceptance evidence. No new runtime feature.
+- M1.6–M1.6.5: canonical `src/` API and independently installed parser runtime, preserving historical test shims.
+- M1.6.6–M1.6.12: targeted correctness, path-boundary, evidence-integrity and parser span-extraction repairs. These milestones have been merged to `main`.
+- M1.6.13: managed storage symlink guard proposed in [Draft PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15), **not yet merged**.
+
+The latest integrated code is **M1.6.12** on `main` (`217a4605`, November 2, 2026). [Main acceptance CI run 41514272171](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41514272171) completed successfully. CI success does not establish production readiness.
 
 ## Prerequisites
 
@@ -45,7 +50,7 @@ No hosted service, automatic background daemon, RAG, embeddings, remote memory, 
 
 See [M1.5.2 decision record](docs/M1.5.2-ACCEPTANCE-RUNNER.md) and [project status](PROJECT-STATUS.md).
 
-## M1.6 — single orchestration owner (in progress)
+## M1.6 — single orchestration owner (integrated, experimental)
 
 The first non-spike entry point is `src/index.mjs`, exported as `openCodeGraph` by the root `package.json`. It requires a **real, locally installed** Tree-sitter provider. The orchestration now lives in `src/core.mjs`; the M1.5 import path re-exports the same implementation for existing regression tests. Parser, storage, inventory/refresh, and verified query implementations now have canonical owners under `src/`; historical spike paths are compatibility re-exports.
 
@@ -59,22 +64,31 @@ const result = await graph.query('declarations', { name: 'MyClass' });
 
 `npm run test:core` exercises the public API contract offline, without substituting an experimental parser into the public entry point. `npm run test:grammar` requires pinned Tree-sitter packages installed at the project root. The full gate runner includes both suites. The codebase still stores **file-local syntax facts**, not a cross-file resolved semantic graph, and is not production-ready.
 
-## M1.6.2 canonical storage (draft)
+## M1.6.2 canonical storage (integrated)
 
-`src/storage/store.mjs` is the single persistent index implementation. The previous `spikes/m1.4/src/store.mjs` path remains a compatibility re-export, while refresh/query consumers now import canonical storage directly. The schema, canonical serialization, and on-disk snapshot format are unchanged. Run `node tools/verify-gates.mjs --mode offline` locally; only CI full mode (including real Tree-sitter grammars) can accept this PR. See `docs/M1.6.2-CANONICAL-STORAGE-MIGRATION.md`.
+`src/storage/store.mjs` is the single persistent index implementation. The previous `spikes/m1.4/src/store.mjs` path remains a compatibility re-export, while refresh/query consumers now import canonical storage directly. The schema, canonical serialization, and on-disk snapshot format are unchanged. Run `node tools/verify-gates.mjs --mode offline` for offline regressions; full real-grammar acceptance is provided by GitHub Actions. See `docs/M1.6.2-CANONICAL-STORAGE-MIGRATION.md`.
 
-## M1.6.3 canonical inventory and refresh (draft)
+## M1.6.3 canonical inventory and refresh (integrated)
 
-`src/incremental/inventory.mjs` and `src/incremental/refresh.mjs` now own the existing Git-aware working-tree scan and explicit refresh. The M1.4.1 paths are compatibility-only re-exports; `src/core.mjs` and the real parser provider use canonical modules. The index format, parser identities, source-verification boundaries, and reparse behavior are unchanged. The verified query module is migrated to `src/query/query.mjs` in M1.6.4. Run `npm run test:incremental` or `node tools/verify-gates.mjs --mode offline`; only full CI acceptance with the real grammars can close the PR gate. See `docs/M1.6.3-CANONICAL-INCREMENTAL-MIGRATION.md`.
+`src/incremental/inventory.mjs` and `src/incremental/refresh.mjs` now own the existing Git-aware working-tree scan and explicit refresh. The M1.4.1 paths are compatibility-only re-exports; `src/core.mjs` and the real parser provider use canonical modules. The index format, parser identities, source-verification boundaries, and reparse behavior are unchanged. The verified query module is migrated to `src/query/query.mjs` in M1.6.4. Run `npm run test:incremental` or `node tools/verify-gates.mjs --mode offline`; full CI includes the real grammars. See `docs/M1.6.3-CANONICAL-INCREMENTAL-MIGRATION.md`.
 
-## M1.6.4 canonical verified queries (draft)
+## M1.6.4 canonical verified queries (integrated)
 
-`src/query/query.mjs` owns the bounded single and batch read boundaries. The M1.4.2 and M1.5.1 paths are compatibility re-exports and `src/core.mjs` uses the canonical implementation. Freshness double-scans, parser identity checks, output budgets, snapshot format, and partial coverage are unchanged. The new migration suite is `npm run test:query`; full CI acceptance is required before the refactor can be merged. See `docs/M1.6.4-CANONICAL-VERIFIED-QUERY-MIGRATION.md`.
+`src/query/query.mjs` owns the bounded single and batch read boundaries. The M1.4.2 and M1.5.1 paths are compatibility re-exports and `src/core.mjs` uses the canonical implementation. Freshness double-scans, parser identity checks, output budgets, snapshot format, and partial coverage are unchanged. The migration suite is `npm run test:query`; full CI was required before integration. See `docs/M1.6.4-CANONICAL-VERIFIED-QUERY-MIGRATION.md`.
 
-## M1.6.5 standalone runtime dependency boundary (draft)
+## M1.6.5 standalone runtime dependency boundary (integrated)
 
 The production entry point (`src/index.mjs`) and its transitive `src/` imports no longer use any `spikes/` files or package installation directories. Root `package.json` and `package-lock.json` own the pinned Tree-sitter runtime and grammar artifacts; the historical M1.3 lockfile stays for its independent fixture tests. Cache identities continue to hash the actual runtime/extractor source and grammar bytes.
 
 `npm run test:independence` checks the dependency manifest, isolated missing-assets behavior, and the CI installation sequence offline. Full acceptance also runs the same PHP/TypeScript parser workflow from a copied `src/` directory **without** `spikes/` using only its installed dependencies. See `docs/M1.6.5-STANDALONE-RUNTIME-BOUNDARY.md`.
 
-M1.6.5 implementation acceptance (GitHub Actions): **168/168 tests passed** on commit `d2519292` in [run 41424973376](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41424973376). This is a narrow source-package independence gate, not a production-readiness or cross-file semantic resolution claim. The Draft PR remains unmerged.
+M1.6.5 implementation acceptance (GitHub Actions): **168/168 tests passed** on commit `d2519292` in [run 41424973376](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41424973376). This is a narrow source-package independence gate, not a production-readiness or cross-file semantic resolution claim. This milestone was subsequently integrated into `main`.
+
+## Post-integration correctness boundaries (M1.6.6–M1.6.12)
+
+- Refresh prepares parser identities for supported languages added after opening a checkout (M1.6.6).
+- Storage index roots are checked against checkout paths, including physically resolved symlink ancestors (M1.6.7); the independent managed-directory guard is **pending** in PR #15.
+- Acceptance reports require exact gate IDs and nonzero, zero-skip results; query selectors cannot override checkout scope, and report-output paths are guarded (M1.6.9–M1.6.10).
+- M1.6.11 documents the distinction between conceptual uncertain facts and the implemented query states. M1.6.12 computes parser source coordinates using per-file indexed offsets, with byte-verified spans and a narrow synthetic benchmark; it is not a repository-wide speed claim.
+
+These changes have been merged, not merely staged in Draft PRs. Historical decision records preserve their original review-time language and are **not** live release-status summaries. Consult [project status](PROJECT-STATUS.md) for the current integrated boundary and outstanding PRs.
