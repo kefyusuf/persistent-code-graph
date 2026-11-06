@@ -1,10 +1,10 @@
 # Persistent Code Graph — Project Status
 
-**As of 2026-11-03. Experimental; not production-ready.**
+**As of 2026-11-06. Experimental; not production-ready.**
 
 - **Integrated `main` head:** `217a46052c7297f1ab6bfa190a81503b8c3ea5b9` (through M1.6.12).
 - **Post-integration CI:** [GitHub Actions run 41514272171](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41514272171), `completed / success`, on that exact `main` head.
-- **Pending separate change:** [Draft PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15) (M1.6.13 managed storage path symlink guard); not part of `main`. Its [head-specific full CI](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41523044322) passed; independent code review and merge authorization remain separate.
+- **Pending separate change:** [Draft PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15) (M1.6.13 managed storage path symlink guard); not part of `main`. Its final corrective head `16d15fec26c4f173905e022186d1d0dde9f5b712` passed [full GitHub Actions run 41589733816](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41589733816). The previous head's review finding (checkout/managed-path collision) was addressed with five additional RED→GREEN tests; updated independent review and merge authorization remain separate.
 
 ## Integrated milestones
 
