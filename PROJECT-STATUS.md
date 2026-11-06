@@ -4,7 +4,7 @@
 
 - **Integrated `main` head:** `217a46052c7297f1ab6bfa190a81503b8c3ea5b9` (through M1.6.12).
 - **Post-integration CI:** [GitHub Actions run 41514272171](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41514272171), `completed / success`, on that exact `main` head.
-- **Pending separate change:** [Draft PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15) (M1.6.13 managed storage path symlink guard); not part of `main`. Its latest corrective head `b663cf79b05bcbd470aaefa56d6f5a3d51658416` passed [full GitHub Actions run 42221913715](https://github.com/kefyusuf/persistent-code-graph/actions/runs/42221913715). Two subsequent review findings were repaired with RED→GREEN tests: checkout/managed-path collisions and JSON leaf symlinks; independent review and merge authorization remain separate.
+- **Pending separate change:** [Draft PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15) (M1.6.13 managed storage path symlink guard); not part of `main`. Its last runtime-corrective head `b663cf79b05bcbd470aaefa56d6f5a3d51658416` passed [full GitHub Actions run 42221913715](https://github.com/kefyusuf/persistent-code-graph/actions/runs/42221913715). Its current tests-only head `7a63e73cecaa6c221d12c7c35e2746602409768d` added two publication-time immutable-leaf symlink regressions (no runtime edits) and passed [full GitHub Actions run 42222767563](https://github.com/kefyusuf/persistent-code-graph/actions/runs/42222767563). Review findings on checkout/managed-path collisions and JSON leaf symlinks were repaired with RED→GREEN tests; independent review and merge authorization remain separate.
 
 ## Integrated milestones
 
