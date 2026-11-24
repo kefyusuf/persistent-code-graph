@@ -11,9 +11,9 @@ A deliberately small, offline-first code indexing project. **Not production-read
 - M1.5.2: single command and CI workflow for fail-closed acceptance evidence. No new runtime feature.
 - M1.6–M1.6.5: canonical `src/` API and independently installed parser runtime, preserving historical test shims.
 - M1.6.6–M1.6.12: targeted correctness, path-boundary, evidence-integrity and parser span-extraction repairs. These milestones have been merged to `main`.
-- M1.6.13: managed storage symlink guard proposed in [Draft PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15), **not yet merged**.
+- M1.6.13: static guards against symlinked managed directories, checkout overlap and redirected stored JSON leaves, merged to `main` through [PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15). They are pre-operation checks, not a defence against concurrent symlink swaps.
 
-The latest integrated code is **M1.6.12** on `main` (`217a4605`, November 2, 2026). [Main acceptance CI run 41514272171](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41514272171) completed successfully. CI success does not establish production readiness.
+The latest integrated code is **M1.6.13** on `main` (`d75348cf`, November 24, 2026). [Main acceptance CI run 45385865850](https://github.com/kefyusuf/persistent-code-graph/actions/runs/45385865850) completed successfully with 209/209 tests. CI success does not establish production readiness.
 
 ## Prerequisites
 
@@ -84,10 +84,10 @@ The production entry point (`src/index.mjs`) and its transitive `src/` imports n
 
 M1.6.5 implementation acceptance (GitHub Actions): **168/168 tests passed** on commit `d2519292` in [run 41424973376](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41424973376). This is a narrow source-package independence gate, not a production-readiness or cross-file semantic resolution claim. This milestone was subsequently integrated into `main`.
 
-## Post-integration correctness boundaries (M1.6.6–M1.6.12)
+## Post-integration correctness boundaries (M1.6.6–M1.6.13)
 
 - Refresh prepares parser identities for supported languages added after opening a checkout (M1.6.6).
-- Storage index roots are checked against checkout paths, including physically resolved symlink ancestors (M1.6.7); the independent managed-directory guard is **pending** in PR #15.
+- Storage index roots are checked against checkout paths, including physically resolved symlink ancestors (M1.6.7). Managed directories must be real directories outside the checkout, and stored JSON leaves must be regular files (M1.6.13); see [the M1.6.13 note](docs/M1.6.13-MANAGED-STORAGE-PATH-GUARD.md) for the limits.
 - Acceptance reports require exact gate IDs and nonzero, zero-skip results; query selectors cannot override checkout scope, and report-output paths are guarded (M1.6.9–M1.6.10).
 - M1.6.11 documents the distinction between conceptual uncertain facts and the implemented query states. M1.6.12 computes parser source coordinates using per-file indexed offsets, with byte-verified spans and a narrow synthetic benchmark; it is not a repository-wide speed claim.
 

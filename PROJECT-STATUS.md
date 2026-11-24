@@ -1,10 +1,11 @@
 # Persistent Code Graph — Project Status
 
-**As of 2026-11-06. Experimental; not production-ready.**
+**As of 2026-11-24. Experimental; not production-ready.**
 
-- **Integrated `main` head:** `217a46052c7297f1ab6bfa190a81503b8c3ea5b9` (through M1.6.12).
-- **Post-integration CI:** [GitHub Actions run 41514272171](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41514272171), `completed / success`, on that exact `main` head.
-- **Pending separate change:** [Draft PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15) (M1.6.13 managed storage path symlink guard); not part of `main`. Its last runtime-corrective head `b663cf79b05bcbd470aaefa56d6f5a3d51658416` passed [full GitHub Actions run 42221913715](https://github.com/kefyusuf/persistent-code-graph/actions/runs/42221913715). Its current tests-only head `7a63e73cecaa6c221d12c7c35e2746602409768d` added two publication-time immutable-leaf symlink regressions (no runtime edits) and passed [full GitHub Actions run 42222767563](https://github.com/kefyusuf/persistent-code-graph/actions/runs/42222767563). Review findings on checkout/managed-path collisions and JSON leaf symlinks were repaired with RED→GREEN tests; independent review and merge authorization remain separate.
+- **Integrated `main` head:** `d75348cf719e128582628b97b69ae00aa189dde9` (through M1.6.13).
+- **Post-integration CI:** [GitHub Actions run 45385865850](https://github.com/kefyusuf/persistent-code-graph/actions/runs/45385865850), `completed / success`, **209/209** tests, on that exact `main` head.
+- **Open pull requests:** none. [PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15) (M1.6.13 managed storage path symlink guard) was merged on 2026-11-24 after an independent review recorded on the PR. Its merged head `7a63e73cecaa6c221d12c7c35e2746602409768d` passed [full GitHub Actions run 42222767563](https://github.com/kefyusuf/persistent-code-graph/actions/runs/42222767563); its last runtime-corrective commit `b663cf79b05bcbd470aaefa56d6f5a3d51658416` passed [full GitHub Actions run 42221913715](https://github.com/kefyusuf/persistent-code-graph/actions/runs/42221913715). Review findings on checkout/managed-path collisions and JSON leaf symlinks were repaired with RED→GREEN tests.
+- **Open review note from PR #15:** containment is checked in one direction. A checkout nested *inside* a managed directory (index root `/work`, checkout `/work/objects/proj`) is accepted by the constructor and both entrypoints; reproduced locally, no write reaches the checkout.
 
 ## Integrated milestones
 
@@ -23,18 +24,19 @@
 | M1.6.10 | Merged — PR #11 | Query selector scope boundary; acceptance report output destination guard |
 | M1.6.11 | Merged — PR #13 | Documentation/contract terminology alignment |
 | M1.6.12 | Merged — PR #14 | Indexed source coordinates for repeated Tree-sitter fact extraction |
+| M1.6.13 | Merged — PR #15 | Static pre-operation guards for managed directories, checkout overlap and stored JSON leaf symlinks |
 
 ## Verified acceptance versus limitations
 
-The final M1.6.12 PR head `7d96e674` passed **191/191** reported full CI tests (171 offline and 20 real parser/integration) in [run 41456461051](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41456461051). The later integrated `main` merge head has a separate successful [full workflow](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41514272171). These are distinct commits and both are cited separately. Successful tests establish only the exercised contracts, not broad production safety.
+The final M1.6.12 PR head `7d96e674` passed **191/191** reported full CI tests (171 offline and 20 real parser/integration) in [run 41456461051](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41456461051). The later integrated `main` merge head has a separate successful [full workflow](https://github.com/kefyusuf/persistent-code-graph/actions/runs/41514272171). M1.6.13 added 18 storage-boundary regressions; its merged PR head passed full CI in [run 42222767563](https://github.com/kefyusuf/persistent-code-graph/actions/runs/42222767563) and the post-merge `main` run is cited above. These are distinct commits and each is cited separately. Successful tests establish only the exercised contracts, not broad production safety.
 
 The current API operates on **file-local syntax facts**. `verified` means the eligible source working tree matched the indexed snapshot at the two checks performed within that query, **not** continuous freshness or completeness. Missing source observations do not establish absence. No resolved cross-file call targets or complete semantic code graph exist.
 
-Known, unresolved risks: adversarial symlink swaps between path checks and I/O (TOCTOU); Windows locking/rename and crash durability; unproven large-repository latency and token savings; partial parser/relationship coverage; no continuous source freshness guarantee.
+Known, unresolved risks: adversarial symlink swaps between path checks and I/O (TOCTOU); one-directional containment (a checkout nested inside a managed directory is accepted); Windows locking/rename and crash durability; unproven large-repository latency and token savings; partial parser/relationship coverage; no continuous source freshness guarantee.
 
 ## Next bounded work
 
-1. Review [Draft PR #15](https://github.com/kefyusuf/persistent-code-graph/pull/15) and its exact-head CI evidence. Do **not** merge solely because CI passed.
+1. Resolve the PR #15 review note: reject a checkout nested inside a managed storage directory at construction, or document it as an allowed layout.
 2. [Span-performance issue #12](https://github.com/kefyusuf/persistent-code-graph/issues/12) was closed as completed after PR #14's review, merge, and successful post-merge `main` CI. Repository-scale latency and allocation evidence remain unproven and need a separate scoped investigation.
 3. Keep this file and the root README synchronized after each **actual merge**. Historical technical notes are intentionally not rewritten to disguise their prior Draft/pending evidence state.
 
