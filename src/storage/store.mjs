@@ -6,7 +6,7 @@
  * content-addressed file-fact objects. No database/daemon required.
  */
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readFile, open, readdir, rename, rm, stat } from 'node:fs/promises';
+import { mkdir, readFile, open, readdir, rename, rm, lstat } from 'node:fs/promises';
 import { realpathSync, lstatSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
@@ -62,6 +62,31 @@ function isAtOrWithin(parent,child){
  return rel==='' || (rel!=='..' && !rel.startsWith('..'+sep) && !isAbsolute(rel));
 }
 
+/**
+ * Reject pre-existing managed-directory links before reads or writes. The root
+ * was canonicalized at construction; recheck it because a previously absent
+ * directory may have been replaced by a symlink in the meantime.
+ *
+ * This is a pre-operation safeguard, not an atomic defence against concurrent
+ * directory swaps (TOCTOU).
+ */
+function assertManagedStorePaths(indexRoot, checkoutRoot) {
+  const physicalRoot=prospectivePhysicalPath(indexRoot);
+  if(physicalRoot!==indexRoot || isAtOrWithin(checkoutRoot,physicalRoot))
+    throw error('INVALID_STORE','index root changed physical location');
+  for(const name of ['heads','objects','snapshots','locks']) {
+    const managed=join(indexRoot,name);
+    let entry;
+    try{entry=lstatSync(managed);}
+    catch(e){
+      if(e.code==='ENOENT')continue;
+      throw error('INVALID_STORE',`cannot inspect managed directory ${name}: ${e.code}`);
+    }
+    if(entry.isSymbolicLink() || !entry.isDirectory())
+      throw error('INVALID_STORE',`managed directory ${name} must be a real directory`);
+  }
+}
+
 function validatePath(path) {
  if(typeof path!=='string'||path.length===0||path.includes('\\')||path.includes('\0')||isAbsolute(path)||/^[A-Za-z]:/.test(path))
    throw error('INVALID_PATH',String(path));
@@ -105,8 +130,19 @@ export function compareManifest(before,after){
  return out;
 }
 
-async function exists(path) {
- try {await stat(path);return true;}catch(e){if(e.code==='ENOENT')return false;throw e;}
+/** Refuse JSON leaf symlinks and special files before reading stored content.
+ * This pre-open lstat remains subject to concurrent filesystem replacement.
+ */
+async function regularStoredFile(path,{allowMissing=false}={}) {
+ let info;
+ try {info=await lstat(path);}
+ catch(e) {
+  if(e.code==='ENOENT' && allowMissing)return false;
+  throw error('INTEGRITY_ERROR',`cannot inspect stored file ${path}: ${e.code}`);
+ }
+ if(!info.isFile() || info.isSymbolicLink())
+  throw error('INTEGRITY_ERROR',`stored file is not regular: ${path}`);
+ return true;
 }
 async function syncDir(dir){
  // Best-effort durability portability; not all host file systems permit syncing directories.
@@ -125,6 +161,7 @@ async function writeAtomic(target,bytes){
  }finally{await fh?.close();await rm(temp,{force:true});}
 }
 async function loadVerifiedJSON(path,expectedHash){
+ await regularStoredFile(path);
  let bytes;try{bytes=await readFile(path);}catch(e){throw error('INTEGRITY_ERROR',`cannot load ${path}: ${e.code}`);}
  if(expectedHash && hash(bytes)!==expectedHash)throw error('INTEGRITY_ERROR',`hash mismatch at ${path}`);
  try{return JSON.parse(bytes.toString('utf8'));}
@@ -133,7 +170,7 @@ async function loadVerifiedJSON(path,expectedHash){
 async function saveImmutable(directory,obj){
  const body=canonicalJSONString(obj);const id=hash(body);const dest=join(directory,`${id}.json`);
  await mkdir(directory,{recursive:true});
- if(await exists(dest)) {
+ if(await regularStoredFile(dest,{allowMissing:true})) {
   await loadVerifiedJSON(dest,id);
  }else{
   await writeAtomic(dest,body);
@@ -146,8 +183,12 @@ export class CodeGraphStore {
   if(!indexRoot ||!checkoutRoot)throw error('INVALID_STORE','indexRoot and checkoutRoot required');
   this.checkoutRoot=realpathSync(checkoutRoot);
   this.indexRoot=prospectivePhysicalPath(indexRoot);
-  if(isAtOrWithin(this.checkoutRoot,this.indexRoot))
-   throw error('INVALID_STORE','index root must be outside source checkout for M1.4');
+  // An index root may be a checkout's parent, but no managed store
+  // directory may coincide with or be nested within source files.
+  if(isAtOrWithin(this.checkoutRoot,this.indexRoot) ||
+     ['heads','objects','snapshots','locks'].some(name =>
+       isAtOrWithin(this.checkoutRoot,join(this.indexRoot,name))))
+   throw error('INVALID_STORE','index root and managed storage directories must stay outside checkout');
   this.checkoutKey=hash(this.checkoutRoot);
   this.headPath=join(this.indexRoot,'heads',`${this.checkoutKey}.json`);
   this.objectsDir=join(this.indexRoot,'objects');
@@ -156,7 +197,7 @@ export class CodeGraphStore {
   this.failPoint=failPoint;
  }
  async #head(){
-  if(!await exists(this.headPath))return null;
+  if(!await regularStoredFile(this.headPath,{allowMissing:true}))return null;
   const h=await loadVerifiedJSON(this.headPath);
   if(h?.kind!=='codegraph.head'||h.version!==VERSION||h.checkoutKey!==this.checkoutKey||!HASH.test(h.snapshotId??''))
    throw error('INTEGRITY_ERROR','invalid head record');
@@ -170,6 +211,7 @@ export class CodeGraphStore {
   return s;
  }
  async read(){
+  assertManagedStorePaths(this.indexRoot,this.checkoutRoot);
   const h=await this.#head();if(!h)return null;
   const snapshot=await this.#loadSnapshot(h.snapshotId);
   const files=[];
@@ -189,6 +231,7 @@ export class CodeGraphStore {
   if(!Array.isArray(files))throw error('INVALID_MANIFEST','files array required');
   const ready=files.map(validateFacts).sort((a,b)=>Buffer.compare(Buffer.from(a.file,'utf8'),Buffer.from(b.file,'utf8')));
   normalizeManifest(ready); // validate uniqueness and stable ordering
+  assertManagedStorePaths(this.indexRoot,this.checkoutRoot);
   await mkdir(join(this.indexRoot,'locks'),{recursive:true});
   try{await mkdir(this.lockPath);}catch(e){
    if(e.code==='EEXIST')throw error('WRITER_LOCKED',`active or orphaned writer lock at ${this.lockPath}`);
